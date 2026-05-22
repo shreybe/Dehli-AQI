@@ -38,12 +38,16 @@ python3 interactive_radial.py
 python3 interactive_burn_scars.py
 ```
 
-## GitHub Pages
+## GitHub Pages (live site)
 
-1. Open **[github.com/shreybe/Dehli-AQI/settings/pages](https://github.com/shreybe/Dehli-AQI/settings/pages)**
-2. Under **Build and deployment → Source**, choose **GitHub Actions** (not “Deploy from branch”).
-3. Push to `main` — the workflow `.github/workflows/pages.yml` publishes the `website/` folder automatically.
+**URL:** [https://shreybe.github.io/Dehli-AQI/](https://shreybe.github.io/Dehli-AQI/)
 
-**Live site:** [https://shreybe.github.io/Dehli-AQI/](https://shreybe.github.io/Dehli-AQI/)
+If you see the README instead of the smoke-tunnel site, fix Pages settings once:
 
-If you still see only the README, Pages is pointed at the repo root; switch the source to **GitHub Actions** as above.
+1. Open **[Settings → Pages](https://github.com/shreybe/Dehli-AQI/settings/pages)**
+2. **Either** set **Source → Deploy from a branch → `main` → `/docs`**
+3. **Or** set **Source → GitHub Actions** (uses the deploy workflow on `docs/`)
+
+The repo also has `index.html` at the root so **branch / (root)** deploys work too.
+
+> The GitHub **code** view on `github.com/shreybe/Dehli-AQI` always shows README — open the **Pages URL** above for the actual site.
