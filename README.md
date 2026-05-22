@@ -40,5 +40,10 @@ python3 interactive_burn_scars.py
 
 ## GitHub Pages
 
-Enable Pages on this repo: **Settings → Pages → Source: `/website` folder** on `main`.  
-Live URL: `https://shreybe.github.io/Dehli-AQI/`
+1. Open **[github.com/shreybe/Dehli-AQI/settings/pages](https://github.com/shreybe/Dehli-AQI/settings/pages)**
+2. Under **Build and deployment → Source**, choose **GitHub Actions** (not “Deploy from branch”).
+3. Push to `main` — the workflow `.github/workflows/pages.yml` publishes the `website/` folder automatically.
+
+**Live site:** [https://shreybe.github.io/Dehli-AQI/](https://shreybe.github.io/Dehli-AQI/)
+
+If you still see only the README, Pages is pointed at the repo root; switch the source to **GitHub Actions** as above.
