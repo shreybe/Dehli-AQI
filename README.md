@@ -40,4 +40,5 @@ python3 interactive_burn_scars.py
 
 ## GitHub Pages
 
-The site in `website/` can be deployed as GitHub Pages (set source folder to `/website` or move `index.html` to root).
+Enable Pages on this repo: **Settings → Pages → Source: `/website` folder** on `main`.  
+Live URL: `https://shreybe.github.io/Dehli-AQI/`
