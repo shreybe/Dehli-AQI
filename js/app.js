@@ -1,5 +1,5 @@
 /**
- * Delhi AQI Dashboard — radial calendar, drill-down, 2026 forecast
+ * Delhi AQI Dashboard — radial calendar, drill-down, draw to predict 2026
  */
 (function () {
   const MONTHS = [
@@ -15,7 +15,7 @@
     playTimer: null,
     drawPoints: [],
     isDrawing: false,
-    predictLocked: false,
+    revealed: false,
     predictScales: null,
   };
 
@@ -58,8 +58,8 @@
     return DATA?.hourly?.[String(year)]?.[String(month)] ?? [];
   }
 
-  function forecast2026(month) {
-    return DATA?.forecast2026?.[String(month)] ?? null;
+  function actual2026Meta(month) {
+    return DATA?.actual2026Meta?.[String(month)] ?? null;
   }
 
   /* ─── Legend ─── */
@@ -196,13 +196,13 @@
     $("#predict-month-label").textContent = `${mName} ${fcYear}`;
 
     state.drawPoints = [];
-    state.predictLocked = false;
-    $("#compare-panel")?.classList.add("hidden");
-    $("#btn-draw-again")?.classList.add("hidden");
+    state.revealed = false;
+    state.isDrawing = false;
+    $("#reveal-panel")?.classList.add("hidden");
     $("#btn-finish").disabled = false;
 
     renderDetailCharts(year, month);
-    setupForecastChart(year, month);
+    setupPredictChart(year, month);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -448,57 +448,7 @@
       .attr("text-anchor", "middle")
       .attr("fill", "rgba(138,160,190,0.9)")
       .attr("font-size", 9)
-      .text("historical reference");
-  }
-
-  function addForecastLineLabel(g, x, y, viewMonth, fc, margin, w) {
-    if (!fc.daily?.length) return;
-    const anchor = fc.daily.reduce((best, d) => (d.aqi > best.aqi ? d : best), fc.daily[0]);
-    const ax = x(anchor.day);
-    const ay = y(anchor.aqi);
-    const mName = MONTHS[viewMonth - 1];
-    const fcYear = fc.year ?? 2026;
-    const labelG = g.append("g").attr("class", "fc-line-label");
-    const boxW = 138;
-    const boxH = 34;
-    let lx = ax - boxW / 2;
-    let ly = ay - boxH - 12;
-    lx = Math.max(margin.left, Math.min(margin.left + w - boxW, lx));
-    ly = Math.max(margin.top + 4, ly);
-
-    labelG
-      .append("rect")
-      .attr("x", lx)
-      .attr("y", ly)
-      .attr("width", boxW)
-      .attr("height", boxH)
-      .attr("rx", 5)
-      .attr("fill", "rgba(42,40,38,0.92)")
-      .attr("stroke", "rgba(200,205,212,0.45)");
-
-    labelG
-      .append("text")
-      .attr("x", lx + boxW / 2)
-      .attr("y", ly + 14)
-      .attr("text-anchor", "middle")
-      .attr("fill", "#e8eaed")
-      .attr("font-size", 11)
-      .attr("font-weight", "600")
-      .text(`${mName} ${fcYear} (model)`);
-
-    labelG
-      .append("text")
-      .attr("x", lx + boxW / 2)
-      .attr("y", ly + 27)
-      .attr("text-anchor", "middle")
-      .attr("fill", "rgba(180,170,210,0.9)")
-      .attr("font-size", 9)
-      .text("model forecast");
-  }
-
-  function meanAqiFromDraw(points) {
-    if (!points.length) return null;
-    return Math.round((points.reduce((s, p) => s + p.aqi, 0) / points.length) * 10) / 10;
+      .text("reference · not your 2026 draw");
   }
 
   function redrawUserDraw(ctx, x, y) {
@@ -519,63 +469,78 @@
     ctx.stroke();
   }
 
-  function finishCompare(viewMonth, fc) {
-    const mName = MONTHS[viewMonth - 1];
-    const fcYear = fc?.year ?? DATA?.forecastYear ?? 2026;
-    const panel = $("#compare-panel");
-    const note = $("#compare-note");
-
-    if (state.drawPoints.length < 2) {
-      note.textContent = "Draw a line on the chart first — click and drag across the days of the month.";
-      panel.classList.remove("hidden");
-      return;
-    }
-
-    const userMean = meanAqiFromDraw(state.drawPoints);
-    const modelMean = fc?.monthlyAqi ?? null;
-
-    state.predictLocked = true;
+  function reveal2026(month, series) {
+    state.revealed = true;
     $("#btn-finish").disabled = true;
-    $("#btn-draw-again").classList.remove("hidden");
-    $("#predict-canvas")?.classList.add("is-locked");
-
-    let html = `Your drawn <strong>${mName} ${fcYear}</strong> mean AQI: <strong>${userMean}</strong>`;
-    if (modelMean != null) {
-      const diff = Math.round((userMean - modelMean) * 10) / 10;
-      const dir = diff > 0 ? "higher" : diff < 0 ? "lower" : "the same as";
-      const diffAbs = Math.abs(diff);
-      html += `. Model forecast: <strong>${modelMean}</strong> — your line is <strong>${diffAbs || "exactly"}</strong> AQI points ${dir === "the same as" ? "the same as" : dir} the model.`;
-    } else {
-      html += ". No model forecast available for this month.";
-    }
-    note.innerHTML = html;
+    const panel = $("#reveal-panel");
     panel.classList.remove("hidden");
-    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 
-  function renderModelStats(viewMonth, fc) {
-    const el = $("#model-stats");
-    const mName = MONTHS[viewMonth - 1];
-    if (!fc) {
-      el.innerHTML = `<p>No model forecast for <strong>${mName}</strong> — not enough historical months in the dataset.</p>`;
-      return;
+    const mName = MONTHS[month - 1];
+    const fcYear = DATA?.forecastYear ?? 2026;
+    const meta = actual2026Meta(month);
+    let title = `Actual ${mName} ${fcYear}`;
+    let note = "";
+
+    if (!series.length) {
+      title = `${mName} ${fcYear} — no data`;
+      note = "No 2026 curve available for this month.";
+    } else if (meta?.source === "estimated") {
+      title = `Estimated ${mName} ${fcYear}`;
+      note = meta.note || "This month is estimated from 2025–2026 trends (sensors only through May 2026).";
+    } else if (meta?.source === "observed") {
+      note = `Recorded in the Delhi sensor dataset through May ${fcYear}.`;
     }
-    const years = fc.trainingYears.join(", ");
-    const aqis = fc.trainingAqi.join(", ");
-    const r2txt = fc.r2 != null ? `R² = ${fc.r2}` : "single-year estimate";
-    const shapeNote = fc.shapeFromYear
-      ? `Daily shape scaled from <strong>${fc.shapeFromYear}</strong> to match predicted monthly mean.`
-      : "";
-    el.innerHTML = `
-      <p>Predicted mean AQI for <strong>${mName} ${fc.year}</strong>: <strong>${fc.monthlyAqi}</strong> (${labelForBin(fc.bin)})</p>
-      <p>Trained on monthly means for years <strong>${years}</strong> → AQI: ${aqis}. ${r2txt}.</p>
-      <p class="model-eq">AQI ≈ ${fc.intercept} + ${fc.slope} × year</p>
-      <p>${shapeNote}</p>
-    `;
+
+    $("#reveal-title").textContent = title;
+    $("#reveal-note").textContent = note;
+
+    const el = d3.select("#chart-reveal");
+    el.selectAll("*").remove();
+
+    const W = el.node().clientWidth || 800;
+    const H = 220;
+    const mg = chartMargins();
+    const iw = W - mg.left - mg.right;
+    const ih = H - mg.top - mg.bottom;
+
+    const x2 = d3
+      .scaleLinear()
+      .domain([1, d3.max(series, (d) => d.day)])
+      .range([0, iw]);
+    const y2 = d3
+      .scaleLinear()
+      .domain([0, d3.max(series, (d) => d.aqi) * 1.1])
+      .nice()
+      .range([ih, 0]);
+
+    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const g = svg.append("g").attr("transform", `translate(${mg.left},${mg.top})`);
+
+    g.append("g")
+      .attr("class", "grid")
+      .call(d3.axisLeft(y2).tickSize(-iw).tickFormat("").ticks(5))
+      .call((sel) => sel.select(".domain").remove());
+
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${ih})`)
+      .call(d3.axisBottom(x2).ticks(8).tickFormat((d) => `Day ${d}`));
+
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y2).ticks(5));
+
+    const line = d3
+      .line()
+      .x((d) => x2(d.day))
+      .y((d) => y2(d.aqi))
+      .curve(d3.curveMonotoneX);
+
+    g.append("path").datum(series).attr("class", "line-actual").attr("d", line);
+
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /* ─── 2026 forecast chart + draw your prediction ─── */
-  function setupForecastChart(viewYear, viewMonth) {
+  /* ─── Draw 2026 prediction (2023-style) ─── */
+  function setupPredictChart(viewYear, viewMonth) {
     const wrap = $("#predict-wrap");
     const canvas = $("#predict-canvas");
     const svg = d3.select("#predict-grid");
@@ -590,28 +555,25 @@
     const h = H - margin.top - margin.bottom;
 
     const viewDaily = dailySeries(viewYear, viewMonth);
-    const fc = forecast2026(viewMonth);
-    renderModelStats(viewMonth, fc);
+    const actual2026 = dailySeries(DATA?.forecastYear ?? 2026, viewMonth);
 
-    const fcDaily = fc?.daily ?? [];
     const maxDay = Math.max(
       28,
       d3.max(viewDaily, (d) => d.day) || 30,
-      d3.max(fcDaily, (d) => d.day) || 30
+      d3.max(actual2026, (d) => d.day) || 0
     );
 
     const yMax = Math.max(
       500,
       d3.max(viewDaily, (d) => d.aqi) || 0,
-      d3.max(fcDaily, (d) => d.aqi) || 0,
-      fc?.monthlyAqi || 0,
+      d3.max(actual2026, (d) => d.aqi) || 0,
       300
     );
 
     const x = d3.scaleLinear().domain([1, maxDay]).range([margin.left, margin.left + w]);
     const y = d3.scaleLinear().domain([0, yMax]).nice().range([margin.top + h, margin.top]);
 
-    state.predictScales = { x, y, maxDay, yMax, margin, W, H, viewYear, viewMonth, fc };
+    state.predictScales = { x, y, maxDay, yMax, margin, W, H, viewYear, viewMonth };
 
     const g = svg.attr("width", W).attr("height", H).append("g");
 
@@ -649,14 +611,6 @@
       addRefLineLabel(g, x, y, viewYear, viewMonth, viewDaily, margin, w);
     }
 
-    if (fcDaily.length) {
-      g.append("path")
-        .datum(fcDaily)
-        .attr("class", "line-forecast")
-        .attr("d", line);
-      addForecastLineLabel(g, x, y, viewMonth, fc, margin, w);
-    }
-
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, W, H);
     if (state.drawPoints.length >= 2) redrawUserDraw(ctx, x, y);
@@ -674,13 +628,13 @@
     }
 
     canvas.onmousedown = (e) => {
-      if (state.predictLocked) return;
+      if (state.revealed) return;
       state.isDrawing = true;
       state.drawPoints = [canvasPoint(e)];
       redrawUserDraw(ctx, x, y);
     };
     canvas.onmousemove = (e) => {
-      if (!state.isDrawing || state.predictLocked) return;
+      if (!state.isDrawing || state.revealed) return;
       state.drawPoints.push(canvasPoint(e));
       redrawUserDraw(ctx, x, y);
     };
@@ -698,30 +652,23 @@
     canvas.ontouchend = () => canvas.onmouseup();
 
     $("#btn-clear-draw").onclick = () => {
-      if (state.predictLocked) return;
+      if (state.revealed) return;
       state.drawPoints = [];
       ctx.clearRect(0, 0, W, H);
-      $("#compare-panel")?.classList.add("hidden");
     };
 
-    $("#btn-finish").onclick = () => finishCompare(viewMonth, fc);
-
-    $("#btn-draw-again").onclick = () => {
-      state.predictLocked = false;
-      state.drawPoints = [];
-      ctx.clearRect(0, 0, W, H);
-      canvas.classList.remove("is-locked");
-      $("#btn-finish").disabled = false;
-      $("#btn-draw-again").classList.add("hidden");
-      $("#compare-panel")?.classList.add("hidden");
+    $("#btn-finish").onclick = () => {
+      const series = dailySeries(DATA?.forecastYear ?? 2026, viewMonth);
+      reveal2026(viewMonth, series);
     };
   }
 
   /* ─── Year slider / play ─── */
   function bindControls() {
     const slider = $("#year-slider");
-    slider.min = DATA.years[0];
-    slider.max = DATA.years[DATA.years.length - 1];
+    const calendarYears = DATA.years.filter((y) => y <= 2023);
+    slider.min = calendarYears[0];
+    slider.max = calendarYears[calendarYears.length - 1];
     slider.value = 2020;
     state.year = 2020;
 
@@ -738,7 +685,7 @@
         return;
       }
       $("#year-play").textContent = "❚❚";
-      const years = DATA.years;
+      const years = DATA.years.filter((y) => y <= 2023);
       let i = years.indexOf(state.year);
       state.playTimer = setInterval(() => {
         i = (i + 1) % years.length;
@@ -759,7 +706,7 @@
       if (state.selectedMonth) {
         const { year, month } = state.selectedMonth;
         renderDetailCharts(year, month);
-        setupForecastChart(year, month);
+        if (!state.revealed) setupPredictChart(year, month);
       }
     });
   }

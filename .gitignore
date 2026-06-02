@@ -5,3 +5,6 @@ __pycache__/
 docs/.DS_Store
 *.pyc
 .env
+
+# Large raw sensor export (rebuild JSON locally with scripts/build_aqi_data.py)
+Delhi Air Quality Time Series Dataset*.csv

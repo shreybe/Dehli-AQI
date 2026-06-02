@@ -26,7 +26,13 @@ jobs:
           python-version: "3.12"
 
       - name: Build dashboard data
-        run: pip install pandas -q && python3 scripts/build_aqi_data.py
+        run: |
+          pip install pandas -q
+          if [ -f "Delhi Air Quality Time Series Dataset(01-01-2025 to 15-05-2026).csv" ]; then
+            python3 scripts/build_aqi_data.py
+          else
+            echo "New 2025–2026 CSV not in CI — using committed delhi_aqi.json"
+          fi
 
       - name: Prepare site bundle
         run: |
