@@ -1,4 +1,5 @@
-name: Deploy Delhi AQI Dashboard
+# Deploy delhi-dashboard to GitHub Pages (works with Source = GitHub Actions)
+name: Deploy GitHub Pages
 
 on:
   push:
@@ -12,19 +13,42 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+
+      - uses: actions/setup-python@v5
         with:
-          path: delhi-dashboard
-      - id: deployment
+          python-version: "3.12"
+
+      - name: Build dashboard data
+        run: pip install pandas -q && python3 scripts/build_aqi_data.py
+
+      - name: Prepare site bundle
+        run: |
+          rm -rf _site
+          cp -r delhi-dashboard _site
+          cp -r delhi-dashboard/data _site/data 2>/dev/null || true
+          test -f data/delhi_aqi.json && cp data/delhi_aqi.json _site/data/
+          touch _site/.nojekyll
+          echo "Site files:" && find _site -type f | head -20
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

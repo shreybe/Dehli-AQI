@@ -8,7 +8,10 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 CSV = ROOT / "delhi_aqi.csv"
-OUT = ROOT / "delhi-dashboard" / "data" / "delhi_aqi.json"
+OUT_PATHS = [
+    ROOT / "delhi-dashboard" / "data" / "delhi_aqi.json",
+    ROOT / "data" / "delhi_aqi.json",
+]
 
 
 def pm25_to_aqi(pm: float) -> float:
@@ -89,7 +92,9 @@ def main():
                     "so2": round(float(ddf["so2"].mean()), 1),
                 })
             hourly[str(year)][str(month)] = []
-            for _, row in mdf.sort_values("date").iterrows():
+            for i, (_, row) in enumerate(mdf.sort_values("date").iterrows()):
+                if i % 3 != 0:
+                    continue
                 hourly[str(year)][str(month)].append({
                     "t": row["date"].strftime("%Y-%m-%d %H:%M"),
                     "aqi": round(float(row["aqi"]), 1),
@@ -109,9 +114,10 @@ def main():
         "hourly": hourly,
     }
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload), encoding="utf-8")
-    print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
+    for out in OUT_PATHS:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload), encoding="utf-8")
+        print(f"Wrote {out} ({out.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

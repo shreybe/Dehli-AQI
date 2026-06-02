@@ -3,145 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Smoke That Stays — Delhi AQI</title>
+  <title>Delhi AQI · The Smoke That Stays</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <!-- ═══ INTRO: character says hey ═══ -->
-  <div id="intro-screen" class="screen active">
-    <div class="intro-bg"></div>
-    <div class="intro-content">
-      <div class="guide-wrap intro-guide">
-        <img src="assets/guide.png" alt="Raj, your Delhi guide" class="guide-img" />
-        <div class="speech-bubble" id="intro-speech">
-          <p class="speech-line visible">Hey! I'm <strong>Raj</strong> — born and raised in Delhi.</p>
-          <p class="speech-line">Every October, the sky turns against us. Let me show you why.</p>
-        </div>
-      </div>
-      <button type="button" class="btn-enter" id="btn-enter">
-        Fly through the smoke →
-      </button>
+  <div id="loader" class="loader">
+    <div class="loader-inner">
+      <p class="loader-label">LOADING DELHI SENSOR DATA</p>
+      <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
     </div>
   </div>
 
-  <!-- ═══ SMOKE TUNNEL TRANSITION ═══ -->
-  <div id="tunnel-overlay" class="tunnel-overlay" aria-hidden="true">
-    <canvas id="tunnel-canvas"></canvas>
-    <div class="tunnel-rings" id="tunnel-rings"></div>
-    <div class="tunnel-vignette"></div>
-    <img src="assets/guide.png" alt="" class="guide-flying" id="guide-flying" />
-    <p class="tunnel-label" id="tunnel-label">Entering Delhi...</p>
-  </div>
+  <div id="app" class="app hidden">
+    <!-- ═══ HOME: radial calendar ═══ -->
+    <section id="view-home" class="view view-active">
+      <header class="hero">
+        <p class="eyebrow">Delhi · Hourly sensors · 2020–2023</p>
+        <h1 class="title">The Smoke <em>That Stays</em></h1>
+        <p class="subtitle">
+          Mean monthly AQI in discrete health bands. Select a year, then click a month to drill down —
+          explore pollutants, then draw your prediction for 2023.
+        </p>
+      </header>
 
-  <!-- ═══ MAIN SITE ═══ -->
-  <div id="main-site" class="main-site hidden">
-    <header class="site-header">
-      <div class="logo">THE SMOKE THAT STAYS</div>
-      <nav class="site-nav">
-        <button type="button" class="nav-link active" data-section="home">Home</button>
-        <button type="button" class="nav-link" data-section="hometown">My Delhi</button>
-        <button type="button" class="nav-link" data-section="burn">Burn Scars</button>
-        <button type="button" class="nav-link" data-section="aqi">AQI Calendar</button>
-        <button type="button" class="nav-link" data-section="story">The Story</button>
-      </nav>
-    </header>
+      <div class="dashboard-grid">
+        <div class="panel panel-radial">
+          <div class="panel-head">
+            <h2>Monthly AQI calendar</h2>
+            <p class="panel-hint">Click a colored month to explore · Oct–Nov = stubble season</p>
+          </div>
+          <div class="radial-wrap">
+            <svg id="radial-chart" role="img" aria-label="Monthly AQI radial chart"></svg>
+            <div class="radial-center-label" id="radial-center">2020</div>
+          </div>
+        </div>
 
-    <aside class="guide-panel">
-      <img src="assets/guide.png" alt="Raj" class="guide-img guide-small" />
-      <div class="guide-speech" id="guide-speech">
-        Welcome back. Pick a chapter — I'll fly you there through the smog.
+        <aside class="panel panel-side">
+          <div class="year-control">
+            <label for="year-slider">Year</label>
+            <input type="range" id="year-slider" min="2020" max="2023" value="2020" step="1" />
+            <div class="year-meta">
+              <span id="year-display" class="year-big">2020</span>
+              <button type="button" id="year-play" class="btn-ghost" title="Play years">▶</button>
+            </div>
+          </div>
+
+          <div class="legend-block">
+            <h3>AQI categories</h3>
+            <p class="legend-note">Discrete bands — not a continuous scale</p>
+            <ul id="legend-bins" class="legend-bins"></ul>
+          </div>
+
+          <div class="stat-block" id="year-stats">
+            <h3>Year snapshot</h3>
+            <dl class="stat-list">
+              <div><dt>Peak month AQI</dt><dd id="stat-peak">—</dd></div>
+              <div><dt>Mean (months w/ data)</dt><dd id="stat-mean">—</dd></div>
+              <div><dt>Months recorded</dt><dd id="stat-months">—</dd></div>
+            </dl>
+          </div>
+        </aside>
       </div>
-    </aside>
+    </section>
 
-    <main class="content">
-      <!-- HOME -->
-      <section id="section-home" class="page-section active">
-        <div class="hero">
-          <p class="hero-eyebrow">Delhi · Punjab · MODIS · Inversion</p>
-          <h1 class="hero-title">The Smoke<br /><em>That Stays</em></h1>
-          <p class="hero-sub">
-            When farmers burn rice stubble, a temperature inversion traps the plume over Delhi.
-            AQI hits 500+. This is not weather — it's a system failing everyone.
+    <!-- ═══ DETAIL: month drill-down + predict ═══ -->
+    <section id="view-detail" class="view">
+      <nav class="detail-nav">
+        <button type="button" id="btn-back" class="btn-back">← Back to calendar</button>
+        <span class="detail-badge" id="detail-badge">Delhi · 2020</span>
+      </nav>
+
+      <header class="detail-hero">
+        <h1 id="detail-title">November 2020</h1>
+        <p id="detail-sub" class="detail-sub">Daily mean AQI and key pollutants driving the haze</p>
+      </header>
+
+      <div class="detail-charts">
+        <article class="chart-card chart-primary">
+          <header class="chart-head">
+            <h2>AQI trend <span class="chart-unit">(daily mean)</span></h2>
+            <p class="chart-desc" id="chart-aqi-desc">Air Quality Index across the month</p>
+          </header>
+          <div class="chart-body" id="chart-aqi"></div>
+        </article>
+
+        <article class="chart-card">
+          <header class="chart-head">
+            <h2>Pollutants driving AQI</h2>
+            <p class="chart-desc">PM2.5, NO₂, O₃, SO₂ — normalized view</p>
+          </header>
+          <div class="chart-body chart-tall" id="chart-pollutants"></div>
+        </article>
+
+        <article class="chart-card chart-narrow">
+          <header class="chart-head">
+            <h2>Hourly intensity</h2>
+            <p class="chart-desc">When pollution spikes within the day</p>
+          </header>
+          <div class="chart-body" id="chart-hourly"></div>
+        </article>
+      </div>
+
+      <section class="predict-section" id="predict-section">
+        <div class="predict-header">
+          <h2>Predict <span id="predict-month-label">this month</span> in 2023</h2>
+          <p>
+            Draw the daily AQI trend you expect for the same month in 2023.
+            When you're done, press <strong>Finish</strong> to reveal what the sensors actually recorded.
           </p>
-          <div class="hero-stats">
-            <div class="stat"><span class="stat-n">800+</span><span class="stat-l">Peak AQI recorded</span></div>
-            <div class="stat"><span class="stat-n">25 yr</span><span class="stat-l">MODIS: fires worsening</span></div>
-            <div class="stat"><span class="stat-n">2–3 wk</span><span class="stat-l">Farmers' impossible window</span></div>
+        </div>
+
+        <div class="predict-card">
+          <div class="predict-toolbar">
+            <button type="button" id="btn-clear-draw" class="btn-ghost">Clear drawing</button>
+            <span class="draw-hint">Click and drag on the chart below</span>
+          </div>
+          <div class="predict-canvas-wrap" id="predict-wrap">
+            <svg id="predict-grid" class="predict-svg"></svg>
+            <canvas id="predict-canvas"></canvas>
+          </div>
+          <div class="predict-actions">
+            <button type="button" id="btn-finish" class="btn-primary">Finish & reveal 2023</button>
+          </div>
+          <div id="reveal-panel" class="reveal-panel hidden">
+            <h3 id="reveal-title">Actual 2023</h3>
+            <p id="reveal-note" class="reveal-note"></p>
+            <div class="chart-body" id="chart-reveal"></div>
           </div>
         </div>
       </section>
-
-      <!-- HOMETOWN / DELHI AREAS -->
-      <section id="section-hometown" class="page-section">
-        <h2 class="section-title">Raj's Delhi — AQI by neighborhood</h2>
-        <p class="section-lead">Hover each area. This is home — and every winter it hurts to breathe here.</p>
-        <div class="delhi-map-wrap">
-          <svg class="delhi-map" viewBox="0 0 400 320" role="img" aria-label="Delhi neighborhoods AQI map">
-            <defs>
-              <radialGradient id="smog-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#888" stop-opacity="0.35" />
-                <stop offset="100%" stop-color="#222" stop-opacity="0" />
-              </radialGradient>
-            </defs>
-            <rect width="400" height="320" fill="#141820" rx="8" />
-            <ellipse cx="200" cy="160" rx="180" ry="130" fill="url(#smog-glow)" />
-            <g class="zones" id="delhi-zones"></g>
-          </svg>
-          <div class="zone-detail" id="zone-detail">
-            <span class="zone-name">—</span>
-            <span class="zone-aqi">—</span>
-            <span class="zone-cat">Hover a neighborhood</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- BURN SCARS -->
-      <section id="section-burn" class="page-section">
-        <h2 class="section-title">MCD64A1 — Burn scars across Punjab</h2>
-        <p class="section-lead">Week by week, field after field goes dark. Drag the slider — watch October unfold.</p>
-        <iframe class="viz-frame" src="viz/02_modis_burn_scars.html" title="Burn scars interactive"></iframe>
-      </section>
-
-      <!-- AQI RADIAL -->
-      <section id="section-aqi" class="page-section">
-        <h2 class="section-title">Delhi AQI — year by year</h2>
-        <p class="section-lead">Each ring was a year of my life breathing this. Slide through 2020–2023.</p>
-        <iframe class="viz-frame" src="viz/08_radial_poster.html" title="AQI radial interactive"></iframe>
-      </section>
-
-      <!-- STORY -->
-      <section id="section-story" class="page-section">
-        <h2 class="section-title">Nobody's villain</h2>
-        <div class="story-grid">
-          <article class="story-card">
-            <h3>Farmers</h3>
-            <p>Two weeks between rice harvest and wheat planting. Burning is the fastest, cheapest way to clear fields. Happy seeders cost money they don't have.</p>
-          </article>
-          <article class="story-card">
-            <h3>Delhi residents</h3>
-            <p>We eat the rice. We blame the farmers. We breathe the smoke. Many of us never see Punjab — only the gray sky above us.</p>
-          </article>
-          <article class="story-card">
-            <h3>The inversion</h3>
-            <p>Same physics as June Gloom — cold air trapped below a warm lid. Except the marine layer is made of rice stubble, and it stays for months.</p>
-          </article>
-          <article class="story-card highlight">
-            <h3>The system</h3>
-            <p>25 years of satellite data. Court orders. Subsidies on paper. The burning gets worse. Nobody blames the agricultural calendar that made this inevitable.</p>
-          </article>
-        </div>
-        <figure class="story-viz">
-          <img src="assets/inversion_lid.png" alt="Temperature inversion diagram" />
-          <figcaption>Smoke trapped under the warm-air lid — nowhere to go</figcaption>
-        </figure>
-      </section>
-    </main>
+    </section>
   </div>
 
-  <script src="js/tunnel.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/bins.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
