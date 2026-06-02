@@ -22,14 +22,24 @@
   /* ─── Load data ─── */
   async function loadData() {
     const fill = $("#loader-fill");
-    fill.style.width = "30%";
+    if (fill) fill.style.width = "30%";
     const res = await fetch("data/delhi_aqi.json");
     DATA = await res.json();
-    fill.style.width = "100%";
-    await new Promise((r) => setTimeout(r, 400));
-    $("#loader").classList.add("hidden");
-    $("#app").classList.remove("hidden");
-    init();
+    if (fill) fill.style.width = "100%";
+
+    const startApp = () => {
+      $("#app").classList.remove("hidden");
+      init();
+    };
+
+    if (window.CloudTunnel) {
+      window.CloudTunnel.signalDataReady();
+      window.CloudTunnel.onEmerge(startApp);
+    } else {
+      $("#cloud-intro")?.classList.add("hidden");
+      document.body.classList.remove("tunnel-locked");
+      startApp();
+    }
   }
 
   function monthData(year, month) {
@@ -227,8 +237,8 @@
       .attr("y1", 0)
       .attr("x2", 0)
       .attr("y2", 1);
-    grad.append("stop").attr("offset", "0%").attr("stop-color", "#5eb8ff").attr("stop-opacity", 0.45);
-    grad.append("stop").attr("offset", "100%").attr("stop-color", "#5eb8ff").attr("stop-opacity", 0);
+    grad.append("stop").attr("offset", "0%").attr("stop-color", "#c5c9cf").attr("stop-opacity", 0.4);
+    grad.append("stop").attr("offset", "100%").attr("stop-color", "#c5c9cf").attr("stop-opacity", 0);
 
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -323,7 +333,7 @@
     series.forEach((s, i) => {
       const lg = legend.append("g").attr("transform", `translate(${i * 72}, 0)`);
       lg.append("line").attr("x1", 0).attr("x2", 16).attr("y1", 4).attr("y2", 4).attr("class", s.cls);
-      lg.append("text").attr("x", 20).attr("y", 8).attr("fill", "#7a8699").attr("font-size", 10).text(s.label);
+      lg.append("text").attr("x", 20).attr("y", 8).attr("fill", "#a8adb4").attr("font-size", 10).text(s.label);
     });
   }
 
@@ -331,7 +341,7 @@
     const el = d3.select(selector);
     el.selectAll("*").remove();
     if (!hourly.length) {
-      el.append("p").attr("fill", "#7a8699").text("No hourly data for this month.");
+      el.append("p").attr("fill", "#a8adb4").text("No hourly data for this month.");
       return;
     }
 
@@ -397,7 +407,7 @@
       .attr("y1", ay)
       .attr("x2", lx + boxW / 2)
       .attr("y2", ly + boxH)
-      .attr("stroke", "rgba(94,184,255,0.45)")
+      .attr("stroke", "rgba(160,168,178,0.5)")
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "3,3");
 
@@ -408,15 +418,15 @@
       .attr("width", boxW)
       .attr("height", boxH)
       .attr("rx", 5)
-      .attr("fill", "rgba(8,14,28,0.92)")
-      .attr("stroke", "rgba(94,184,255,0.55)");
+      .attr("fill", "rgba(42,40,38,0.92)")
+      .attr("stroke", "rgba(180,188,198,0.45)");
 
     labelG
       .append("text")
       .attr("x", lx + boxW / 2)
       .attr("y", ly + 14)
       .attr("text-anchor", "middle")
-      .attr("fill", "#8ec8ff")
+      .attr("fill", "#b8c0c8")
       .attr("font-size", 11)
       .attr("font-weight", "600")
       .text(`${mName} ${viewYear}`);
@@ -453,15 +463,15 @@
       .attr("width", boxW)
       .attr("height", boxH)
       .attr("rx", 5)
-      .attr("fill", "rgba(28,18,48,0.92)")
-      .attr("stroke", "rgba(196,181,253,0.55)");
+      .attr("fill", "rgba(42,40,38,0.92)")
+      .attr("stroke", "rgba(200,205,212,0.45)");
 
     labelG
       .append("text")
       .attr("x", lx + boxW / 2)
       .attr("y", ly + 14)
       .attr("text-anchor", "middle")
-      .attr("fill", "#c4b5fd")
+      .attr("fill", "#e8eaed")
       .attr("font-size", 11)
       .attr("font-weight", "600")
       .text(`${mName} ${fcYear} (model)`);
@@ -559,7 +569,8 @@
       g.append("path")
         .datum(viewDaily)
         .attr("fill", "none")
-        .attr("stroke", "rgba(94,184,255,0.4)")
+        .attr("class", "line-ref")
+        .attr("stroke", "rgba(180,188,198,0.5)")
         .attr("stroke-width", 1.5)
         .attr("stroke-dasharray", "5,4")
         .attr("d", line);

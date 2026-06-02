@@ -10,7 +10,25 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div id="loader" class="loader">
+  <div id="cloud-intro" class="cloud-intro" aria-label="Enter through the haze">
+    <div class="cloud-viewport">
+      <div class="cloud-layer" data-depth="1"></div>
+      <div class="cloud-layer" data-depth="2"></div>
+      <div class="cloud-layer" data-depth="3"></div>
+      <div class="cloud-layer" data-depth="4"></div>
+      <div class="cloud-layer" data-depth="5"></div>
+      <div class="cloud-layer cloud-layer--dense" data-depth="6"></div>
+    </div>
+    <div class="cloud-vignette"></div>
+    <div class="cloud-hint">
+      <p class="cloud-hint-eyebrow">Delhi · AQI</p>
+      <p class="cloud-hint-title">The Smoke <em>That Stays</em></p>
+      <p class="cloud-hint-sub">Scroll or swipe to move through the haze</p>
+      <div class="cloud-progress" aria-hidden="true"><div id="cloud-progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="loader" class="loader hidden">
     <div class="loader-inner">
       <p class="loader-label">LOADING DELHI SENSOR DATA</p>
       <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
@@ -127,6 +145,7 @@
   </div>
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/cloud-tunnel.js"></script>
   <script src="js/bins.js"></script>
   <script src="js/app.js"></script>
 </body>
