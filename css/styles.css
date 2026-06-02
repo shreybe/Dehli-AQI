@@ -178,6 +178,34 @@ body.tunnel-locked {
   transition: width 0.15s ease-out;
 }
 
+.cloud-load-status {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: #4a4542;
+}
+
+.cloud-load-status.is-error {
+  color: #8b3a2a;
+}
+
+.cloud-enter {
+  margin-top: 1rem;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  background: #5c636b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.cloud-enter:hover {
+  background: #4a5159;
+}
+
 /* ─── Loader ─── */
 .loader {
   position: fixed;

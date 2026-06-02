@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta name="build" content="draw-reveal-2026-v2" />
+  <meta name="build" content="data-load-fix-v3" />
   <title>Delhi AQI · The Smoke That Stays</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=draw-reveal-2026-v2" />
+  <link rel="stylesheet" href="css/styles.css?v=data-load-fix-v3" />
 </head>
-<body data-build="draw-reveal-2026-v2">
+<body data-build="data-load-fix-v3">
   <div id="cloud-intro" class="cloud-intro" aria-label="Enter through the haze">
     <div class="cloud-viewport">
       <div class="cloud-layer" data-depth="1"></div>
@@ -27,6 +27,8 @@
       <p class="cloud-hint-title">The Smoke <em>That Stays</em></p>
       <p class="cloud-hint-sub">Scroll or swipe to move through the haze</p>
       <div class="cloud-progress" aria-hidden="true"><div id="cloud-progress-fill"></div></div>
+      <p id="cloud-load-status" class="cloud-load-status">Loading sensor data…</p>
+      <button type="button" id="cloud-enter" class="cloud-enter hidden">Enter dashboard →</button>
     </div>
   </div>
 
@@ -160,8 +162,8 @@
   </div>
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="js/cloud-tunnel.js?v=draw-reveal-2026-v2"></script>
-  <script src="js/bins.js?v=draw-reveal-2026-v2"></script>
-  <script src="js/app.js?v=draw-reveal-2026-v2"></script>
+  <script src="js/cloud-tunnel.js?v=data-load-fix-v3"></script>
+  <script src="js/bins.js?v=data-load-fix-v3"></script>
+  <script src="js/app.js?v=data-load-fix-v3"></script>
 </body>
 </html>

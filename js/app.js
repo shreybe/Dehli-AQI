@@ -23,26 +23,64 @@
   const viewHome = $("#view-home");
   const viewDetail = $("#view-detail");
 
+  function dataJsonUrl() {
+    return new URL("data/delhi_aqi.json", window.location.href).href;
+  }
+
+  function setLoadStatus(message, isError) {
+    const el = $("#cloud-load-status");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle("is-error", !!isError);
+  }
+
   /* ─── Load data ─── */
   async function loadData() {
     const fill = $("#loader-fill");
-    if (fill) fill.style.width = "30%";
-    const res = await fetch("data/delhi_aqi.json");
-    DATA = await res.json();
-    if (fill) fill.style.width = "100%";
+    const loader = $("#loader");
+    if (fill) fill.style.width = "20%";
+    setLoadStatus("Loading sensor data…", false);
 
-    const startApp = () => {
-      $("#app").classList.remove("hidden");
-      init();
-    };
+    try {
+      const res = await fetch(dataJsonUrl(), { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`Could not load data (${res.status}). Use a local server from delhi-dashboard/.`);
+      }
+      DATA = await res.json();
+      if (!DATA?.monthly || !DATA?.years?.length) {
+        throw new Error("Data file is empty or invalid.");
+      }
+      if (fill) fill.style.width = "100%";
+      if (loader) loader.classList.add("hidden");
+      setLoadStatus("Data loaded.", false);
 
-    if (window.CloudTunnel) {
-      window.CloudTunnel.signalDataReady();
-      window.CloudTunnel.onEmerge(startApp);
-    } else {
-      $("#cloud-intro")?.classList.add("hidden");
+      const startApp = () => {
+        $("#app").classList.remove("hidden");
+        init();
+      };
+
+      if (window.CloudTunnel) {
+        window.CloudTunnel.signalDataReady();
+        window.CloudTunnel.onEmerge(startApp);
+      } else {
+        $("#cloud-intro")?.classList.add("hidden");
+        document.body.classList.remove("tunnel-locked");
+        startApp();
+      }
+    } catch (err) {
+      console.error(err);
+      if (loader) {
+        loader.classList.remove("hidden");
+        loader.innerHTML =
+          "<p style='color:#8b3a2a;padding:2rem;max-width:420px;text-align:center'>" +
+          "Failed to load data. Run: <code>cd delhi-dashboard && python3 -m http.server 8080</code> " +
+          "then open http://localhost:8080</p>";
+      }
+      setLoadStatus(err.message || "Failed to load data.", true);
       document.body.classList.remove("tunnel-locked");
-      startApp();
+      if (window.CloudTunnel?.signalDataError) {
+        window.CloudTunnel.signalDataError("Data failed to load — see message below.");
+      }
     }
   }
 
@@ -711,8 +749,6 @@
     });
   }
 
-  loadData().catch((err) => {
-    console.error(err);
-    $("#loader").innerHTML = "<p style='color:#d45d52;padding:2rem'>Failed to load data. Run a local server from delhi-dashboard/</p>";
-  });
+  loadData();
 })();
+

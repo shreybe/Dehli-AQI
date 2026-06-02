@@ -1,5 +1,5 @@
 /**
- * Grey cloud tunnel — scroll or drag to zoom through haze into the dashboard.
+ * Grey cloud tunnel — scroll through haze, or enter when data is ready.
  */
 (function () {
   const INTRO = document.getElementById("cloud-intro");
@@ -9,6 +9,7 @@
   const layers = [...INTRO.querySelectorAll(".cloud-layer")];
   const fill = document.getElementById("cloud-progress-fill");
   const hint = INTRO.querySelector(".cloud-hint-sub");
+  const enterBtn = document.getElementById("cloud-enter");
 
   let progress = 0;
   let emerged = false;
@@ -32,22 +33,16 @@
     INTRO.style.setProperty("--tunnel-vignette", String(0.55 - eased * 0.5));
 
     if (fill) fill.style.width = `${progress * 100}%`;
-    if (hint) {
-      hint.textContent =
-        progress >= 0.98
-          ? dataReady
-            ? "Emerging…"
-            : "Almost clear — loading data…"
-          : "Scroll or swipe to move through the haze";
-    }
 
     if (progress >= 1 && dataReady && !emerged) emerge();
   }
 
   function emerge() {
+    if (emerged) return;
     emerged = true;
     INTRO.classList.add("is-emerging");
     document.body.classList.remove("tunnel-locked");
+    if (enterBtn) enterBtn.classList.add("hidden");
 
     window.setTimeout(() => {
       INTRO.classList.add("hidden");
@@ -60,6 +55,8 @@
     if (emerged) return;
     e.preventDefault();
     setProgress(progress + e.deltaY * 0.0012);
+    if (hint && !dataReady) hint.textContent = "Scroll through the haze — loading data…";
+    else if (hint) hint.textContent = "Scroll or swipe to move through the haze";
   }
 
   let touchY = null;
@@ -79,10 +76,23 @@
   INTRO.addEventListener("touchstart", onTouchStart, { passive: true });
   INTRO.addEventListener("touchmove", onTouchMove, { passive: false });
 
+  if (enterBtn) {
+    enterBtn.addEventListener("click", () => {
+      if (dataReady) emerge();
+    });
+  }
+
   window.CloudTunnel = {
     signalDataReady() {
       dataReady = true;
-      if (progress >= 1 && !emerged) emerge();
+      if (enterBtn) enterBtn.classList.remove("hidden");
+      if (hint) hint.textContent = "Data ready — scroll through or tap Enter dashboard";
+      if (progress >= 1) emerge();
+    },
+    signalDataError(message) {
+      dataReady = false;
+      if (enterBtn) enterBtn.classList.add("hidden");
+      if (hint) hint.textContent = message;
     },
     onEmerge(fn) {
       if (emerged) fn();

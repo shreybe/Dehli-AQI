@@ -41,7 +41,9 @@ jobs:
           cp -r delhi-dashboard/data _site/data 2>/dev/null || true
           test -f data/delhi_aqi.json && cp data/delhi_aqi.json _site/data/
           touch _site/.nojekyll
+          test -f _site/data/delhi_aqi.json || (echo "ERROR: missing _site/data/delhi_aqi.json" && exit 1)
           echo "Site files:" && find _site -type f | head -20
+          ls -lh _site/data/delhi_aqi.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
