@@ -2,6 +2,7 @@
 """Build compact JSON for Delhi AQI dashboard."""
 
 import json
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,30 @@ OUT_PATHS = [
 ]
 
 FORECAST_YEAR = 2026
+
+
+def num(value, default: float = 0.0, ndigits: int | None = 1) -> float:
+    """JSON-safe number (no NaN / Infinity)."""
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return default
+    if math.isnan(f) or math.isinf(f):
+        return default
+    if ndigits is None:
+        return f
+    return round(f, ndigits)
+
+
+def sanitize_for_json(obj):
+    """Replace NaN/Inf so browsers can JSON.parse the file."""
+    if isinstance(obj, float):
+        return num(obj, 0.0, None)
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    return obj
 
 
 def pm25_to_aqi(pm: float) -> float:
@@ -92,17 +117,23 @@ def merge_hourly(legacy: pd.DataFrame, new: pd.DataFrame | None) -> pd.DataFrame
     return combined
 
 
+def col_mean(mdf: pd.DataFrame, column: str, ndigits: int = 1) -> float:
+    if column not in mdf.columns:
+        return 0.0
+    return num(mdf[column].mean(), 0.0, ndigits)
+
+
 def fill_pollutant_defaults(mdf: pd.DataFrame) -> dict:
-    """Legacy CSV has full pollutants; new CSV is PM-only — use NaN-safe means."""
+    """Legacy CSV has full pollutants; 2025–2026 rows are often PM-only."""
     return {
-        "pm25": round(float(mdf["pm2_5"].mean()), 1),
-        "pm10": round(float(mdf["pm10"].mean()), 1) if "pm10" in mdf else 0.0,
-        "no2": round(float(mdf["no2"].mean()), 1) if "no2" in mdf else 0.0,
-        "no": round(float(mdf["no"].mean()), 2) if "no" in mdf else 0.0,
-        "o3": round(float(mdf["o3"].mean()), 1) if "o3" in mdf else 0.0,
-        "so2": round(float(mdf["so2"].mean()), 1) if "so2" in mdf else 0.0,
-        "co": round(float(mdf["co"].mean()), 1) if "co" in mdf else 0.0,
-        "nh3": round(float(mdf["nh3"].mean()), 1) if "nh3" in mdf else 0.0,
+        "pm25": col_mean(mdf, "pm2_5", 1),
+        "pm10": col_mean(mdf, "pm10", 1),
+        "no2": col_mean(mdf, "no2", 1),
+        "no": col_mean(mdf, "no", 2),
+        "o3": col_mean(mdf, "o3", 1),
+        "so2": col_mean(mdf, "so2", 1),
+        "co": col_mean(mdf, "co", 1),
+        "nh3": col_mean(mdf, "nh3", 1),
     }
 
 
@@ -125,19 +156,10 @@ def build_series(df: pd.DataFrame) -> tuple[dict, dict, dict, list[int]]:
         ydf = df[df["year"] == year]
         for month in sorted(int(m) for m in ydf["month"].unique()):
             mdf = ydf[ydf["month"] == month]
-            mean_aqi = float(mdf["aqi"].mean())
-            pol = fill_pollutant_defaults(mdf) if "pm10" in mdf.columns else {
-                "pm25": round(float(mdf["pm2_5"].mean()), 1),
-                "pm10": 0.0,
-                "no2": 0.0,
-                "no": 0.0,
-                "o3": 0.0,
-                "so2": 0.0,
-                "co": 0.0,
-                "nh3": 0.0,
-            }
+            mean_aqi = num(mdf["aqi"].mean(), 0.0, 1)
+            pol = fill_pollutant_defaults(mdf)
             monthly[str(year)][str(month)] = {
-                "aqi": round(mean_aqi, 1),
+                "aqi": mean_aqi,
                 **pol,
                 "bin": aqi_bin(mean_aqi),
                 "readings": int(len(mdf)),
@@ -146,11 +168,11 @@ def build_series(df: pd.DataFrame) -> tuple[dict, dict, dict, list[int]]:
             for day, ddf in mdf.groupby("day"):
                 daily[str(year)][str(month)].append({
                     "day": int(day),
-                    "aqi": round(float(ddf["aqi"].mean()), 1),
-                    "pm25": round(float(ddf["pm2_5"].mean()), 1),
-                    "no2": round(float(ddf["no2"].mean()), 1) if "no2" in ddf else 0.0,
-                    "o3": round(float(ddf["o3"].mean()), 1) if "o3" in ddf else 0.0,
-                    "so2": round(float(ddf["so2"].mean()), 1) if "so2" in ddf else 0.0,
+                    "aqi": num(ddf["aqi"].mean(), 0.0, 1),
+                    "pm25": col_mean(ddf, "pm2_5", 1),
+                    "no2": col_mean(ddf, "no2", 1),
+                    "o3": col_mean(ddf, "o3", 1),
+                    "so2": col_mean(ddf, "so2", 1),
                 })
             hourly[str(year)][str(month)] = []
             for i, (_, row) in enumerate(mdf.sort_values("ts").iterrows()):
@@ -159,9 +181,9 @@ def build_series(df: pd.DataFrame) -> tuple[dict, dict, dict, list[int]]:
                     continue
                 hourly[str(year)][str(month)].append({
                     "t": row["ts"].strftime("%Y-%m-%d %H:%M"),
-                    "aqi": round(float(row["aqi"]), 1),
-                    "pm25": round(float(row["pm2_5"]), 1),
-                    "no2": round(float(row["no2"]), 1) if "no2" in row.index else 0.0,
+                    "aqi": num(row["aqi"], 0.0, 1),
+                    "pm25": num(row["pm2_5"], 0.0, 1),
+                    "no2": num(row["no2"], 0.0, 1) if "no2" in row.index else 0.0,
                 })
 
     return monthly, daily, hourly, years
@@ -268,9 +290,13 @@ def main():
         "actual2026Meta": meta_2026,
     }
 
+    payload = sanitize_for_json(payload)
+
     for out in OUT_PATHS:
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload), encoding="utf-8")
+        text = json.dumps(payload, allow_nan=False)
+        out.write_text(text, encoding="utf-8")
+        assert "NaN" not in text, f"Invalid JSON written to {out}"
         print(f"Wrote {out} ({out.stat().st_size // 1024} KB)")
         if meta_2026:
             obs = sum(1 for m in meta_2026.values() if m.get("source") == "observed")
