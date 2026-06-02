@@ -1566,9 +1566,9 @@ body {
   align-items: center;
 }
 
-.intro-smoke + .after-space,
-.intro-smoke + .portal-scroll--smoke {
-  margin-top: 0;
+.intro-smoke + .after-space {
+  height: 0;
+  background: rgb(56, 53, 47);
 }
 
 /* Problem intro scope */
