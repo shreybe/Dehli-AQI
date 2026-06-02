@@ -1,0 +1,276 @@
+/* ─── Scroll zoom portals ─── */
+
+.portal-scroll {
+  position: relative;
+  height: var(--portal-height, 320vh);
+  z-index: 2;
+}
+
+.portal-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  perspective: 820px;
+  perspective-origin: 50% 50%;
+}
+
+.portal-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  transform: scale(1);
+}
+
+/* ─── Portal 1: Smoke O ─── */
+.portal-scroll--smoke {
+  --portal-height: 340vh;
+  background: linear-gradient(#38352f, #2a2826);
+}
+
+.portal-scroll--smoke .portal-stage {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(45, 45, 45, 0.35), transparent 42%),
+    linear-gradient(#020202, rgb(56, 53, 47));
+}
+
+.portal-scroll--smoke .portal-headline {
+  margin: 0;
+  font-size: clamp(3.4rem, 10vw, 9.6rem);
+  line-height: 0.92;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 245, 0.92);
+  text-align: center;
+  text-shadow: 0 0 26px rgba(255, 255, 255, 0.18);
+}
+
+.portal-scroll--smoke .portal-eyebrow {
+  margin: 0 0 0.15rem;
+  font-size: clamp(3.4rem, 10vw, 9.6rem);
+  line-height: 0.92;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 245, 0.92);
+  text-align: center;
+}
+
+.portal-scroll--smoke .portal-subcopy {
+  max-width: 48rem;
+  margin: 1.4rem auto 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(245, 245, 245, 0.65);
+}
+
+.portal-hole {
+  display: inline-block;
+  position: relative;
+}
+
+/* ─── Portal 2: Delhi gateway ─── */
+.portal-scroll--delhi {
+  --portal-height: 360vh;
+  background: #1a120e;
+}
+
+.portal-scroll--delhi .portal-stage {
+  display: block;
+  background: #120c0a;
+}
+
+.portal-delhi-copy {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 12, 10, 0.55) 0%,
+    rgba(18, 12, 10, 0.15) 40%,
+    rgba(18, 12, 10, 0.45) 100%
+  );
+}
+
+.portal-scroll--delhi .portal-kicker {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 220, 180, 0.75);
+}
+
+.portal-scroll--delhi .portal-headline {
+  margin: 0;
+  max-width: 16ch;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-weight: 400;
+  line-height: 1.08;
+  color: #fff8f0;
+  text-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.portal-gateway {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+
+.portal-gateway img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  display: block;
+}
+
+.portal-scroll--delhi .portal-tunnel--warm {
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(255, 200, 120, 0.35) 0%,
+    rgba(40, 24, 16, 0.92) 55%,
+    #0a0604 100%
+  );
+}
+
+/* ─── Portal 3: Smog O ─── */
+.portal-scroll--smog {
+  --portal-height: 300vh;
+  background: #383735;
+}
+
+.portal-scroll--smog .portal-stage {
+  background: #383735;
+  padding: 2rem;
+}
+
+.portal-scroll--smog .portal-headline {
+  margin: 0;
+  max-width: 14ch;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.35rem, 4.6vw, 4.35rem);
+  line-height: 1.07;
+  letter-spacing: -0.035em;
+  color: #f4eee6;
+  text-align: center;
+}
+
+/* ─── Cloud tunnel (shared) ─── */
+.portal-tunnel {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  --tunnel-fog: 0.85;
+}
+
+.portal-tunnel--cloud {
+  background: linear-gradient(
+    165deg,
+    #dce1e8 0%,
+    #b8bec6 45%,
+    #9aa3ad 100%
+  );
+}
+
+.portal-cloud-viewport {
+  position: absolute;
+  inset: -30%;
+  perspective: 700px;
+  transform-style: preserve-3d;
+}
+
+.portal-cloud-layer {
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  filter: blur(44px);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 30% 40%, rgba(230, 232, 236, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 70% 55%, rgba(195, 200, 208, 0.42) 0%, transparent 50%);
+}
+
+.portal-cloud-layer[data-depth="2"] {
+  background:
+    radial-gradient(ellipse 50% 42% at 65% 35%, rgba(210, 218, 228, 0.52) 0%, transparent 52%),
+    radial-gradient(ellipse 45% 38% at 25% 60%, rgba(175, 185, 198, 0.4) 0%, transparent 55%);
+}
+
+.portal-cloud-layer[data-depth="3"] {
+  filter: blur(54px);
+}
+
+.portal-cloud-layer[data-depth="4"] {
+  filter: blur(40px);
+  inset: -10%;
+}
+
+.portal-cloud-layer[data-depth="5"] {
+  filter: blur(66px);
+  background: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(230, 235, 242, 0.38) 0%, transparent 65%);
+}
+
+.portal-cloud-layer--dense {
+  filter: blur(74px);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(240, 244, 248, 0.55) 0%,
+    rgba(180, 190, 205, 0.22) 35%,
+    transparent 70%
+  );
+}
+
+.portal-cloud-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 85% 75% at 50% 48%,
+      transparent 0%,
+      rgba(70, 75, 82, calc(var(--tunnel-fog, 0.85))) 100%
+    ),
+    linear-gradient(180deg, rgba(220, 225, 232, 0.75) 0%, transparent 55%);
+}
+
+.portal-scroll .portal-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  z-index: 6;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  opacity: calc(1 - var(--portal-p, 0) * 3);
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .portal-scroll {
+    --portal-height: 280vh;
+  }
+  .portal-scroll--delhi {
+    --portal-height: 300vh;
+  }
+}

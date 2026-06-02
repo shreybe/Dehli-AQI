@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/dashboard.css?v=embed-v3" />
+    <link rel="stylesheet" href="css/zoom-portals.css?v=1" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
   </head>
@@ -16,7 +17,7 @@
     <section aria-label="Breathing Smoke intro sequence" class="intro-smoke">
       <div class="title-stack">
         <h1>Breathing</h1>
-        <h1>Smoke</h1>
+        <h1>Sm<span class="portal-hole">o</span>ke</h1>
         <p class="dek">
           How crop burning in Northern India chokes Delhi every winter
         </p>
@@ -28,7 +29,68 @@
       <div aria-hidden="true" class="eraser-cursor"></div>
       <div class="scroll-cue">wipe the smoke or scroll</div>
     </section>
-    <section aria-hidden="true" class="after-space"></section>
+
+    <!-- Portal 1: zoom through the O in Smoke → grey clouds -->
+    <section
+      aria-label="Zoom through Smoke into the haze"
+      class="portal-scroll portal-scroll--smoke"
+      id="portal-smoke"
+    >
+      <div class="portal-pin">
+        <div class="portal-stage" data-portal-type="letter">
+          <div class="portal-content">
+            <p class="portal-eyebrow">Breathing</p>
+            <h2 class="portal-headline">Sm<span class="portal-hole">o</span>ke</h2>
+            <p class="portal-subcopy">
+              How crop burning in Northern India chokes Delhi every winter
+            </p>
+          </div>
+          <div class="portal-tunnel portal-tunnel--cloud" aria-hidden="true"></div>
+          <p class="portal-cue">scroll to enter the haze</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Portal 2: Delhi world → zoom through India Gate -->
+    <section
+      aria-label="The world of Delhi"
+      class="portal-scroll portal-scroll--delhi"
+      id="portal-delhi"
+    >
+      <div class="portal-pin">
+        <div class="portal-stage" data-portal-type="gateway">
+          <div class="portal-delhi-copy">
+            <p class="portal-kicker">Delhi</p>
+            <h2 class="portal-headline">Here is the world of Delhi</h2>
+          </div>
+          <figure class="portal-gateway">
+            <img
+              src="assets/delhi/india-gate.jpg"
+              alt="India Gate at sunset, viewed from the ceremonial road"
+            />
+          </figure>
+          <div class="portal-tunnel portal-tunnel--warm" aria-hidden="true"></div>
+          <p class="portal-cue">scroll through the gateway</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Portal 3: zoom through the O in smog -->
+    <section
+      aria-label="Zoom into smog"
+      class="portal-scroll portal-scroll--smog"
+      id="portal-smog"
+    >
+      <div class="portal-pin">
+        <div class="portal-stage portal-stage--dark" data-portal-type="letter">
+          <h2 class="portal-headline">
+            Every year, Delhi disappears into sm<span class="portal-hole">o</span>g.
+          </h2>
+          <div class="portal-tunnel portal-tunnel--cloud" aria-hidden="true"></div>
+          <p class="portal-cue">scroll into the smog</p>
+        </div>
+      </div>
+    </section>
 
     <section
       aria-label="What is the problem with Delhi smog?"
@@ -56,7 +118,6 @@
       </div>
       <article class="text-panel">
         <p class="kicker">What is the problem?</p>
-        <h1>Every year, Delhi disappears into smog.</h1>
         <div class="body-copy">
           <p>
             Delhi and the broader National Capital Region are frequently ranked
@@ -1075,6 +1136,7 @@
     </script>
     <script src="js/bins.js?v=embed-v3"></script>
     <script src="js/aqi-dashboard.js?v=embed-v3"></script>
+    <script src="js/zoom-portals.js?v=1"></script>
     <script src="app.js"></script>
   </body>
 </html>
