@@ -443,6 +443,32 @@ body {
   padding: 1.5rem;
 }
 
+.model-stats {
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  background: rgba(94, 184, 255, 0.06);
+  border: 1px solid rgba(94, 184, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.model-stats strong { color: var(--accent); }
+
+.model-stats .model-eq {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: #8ec8ff;
+  margin-top: 0.5rem;
+}
+
+.line-forecast {
+  fill: none;
+  stroke: #c4b5fd;
+  stroke-width: 2.5;
+}
+
 .predict-toolbar {
   display: flex;
   align-items: center;

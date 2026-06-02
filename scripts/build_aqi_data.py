@@ -48,6 +48,79 @@ def aqi_bin(aqi: float) -> int:
     return 6
 
 
+FORECAST_YEAR = 2026
+
+
+def build_forecast_2026(monthly: dict, daily: dict, years: list[int]) -> dict:
+    """Per-month linear trend on yearly mean AQI; daily curve scaled from latest shape."""
+    forecast = {}
+    for month in range(1, 13):
+        points = []
+        for y in years:
+            rec = monthly.get(str(y), {}).get(str(month))
+            if rec:
+                points.append((y, rec["aqi"]))
+
+        if not points:
+            continue
+
+        if len(points) >= 2:
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            n = len(points)
+            x_bar = sum(xs) / n
+            y_bar = sum(ys) / n
+            num = sum((xs[i] - x_bar) * (ys[i] - y_bar) for i in range(n))
+            den = sum((xi - x_bar) ** 2 for xi in xs) or 1.0
+            slope = num / den
+            intercept = y_bar - slope * x_bar
+            pred_mean = intercept + slope * FORECAST_YEAR
+            ss_res = sum((ys[i] - (intercept + slope * xs[i])) ** 2 for i in range(n))
+            ss_tot = sum((yi - y_bar) ** 2 for yi in ys) or 1.0
+            r2 = 1 - ss_res / ss_tot
+        else:
+            slope = 0.0
+            intercept = points[0][1]
+            pred_mean = points[0][1]
+            r2 = None
+
+        pred_mean = float(max(50, min(650, pred_mean)))
+
+        shape_year = None
+        for y in sorted(years, reverse=True):
+            days = daily.get(str(y), {}).get(str(month), [])
+            if len(days) >= 5:
+                shape_year = y
+                break
+
+        daily_fc = []
+        if shape_year is not None:
+            shape = daily[str(shape_year)][str(month)]
+            shape_mean = sum(d["aqi"] for d in shape) / len(shape)
+            scale = pred_mean / shape_mean if shape_mean > 0 else 1.0
+            for d in shape:
+                daily_fc.append({
+                    "day": d["day"],
+                    "aqi": round(d["aqi"] * scale, 1),
+                })
+
+        forecast[str(month)] = {
+            "year": FORECAST_YEAR,
+            "monthlyAqi": round(pred_mean, 1),
+            "bin": aqi_bin(pred_mean),
+            "daily": daily_fc,
+            "model": "linear_year_trend",
+            "trainingYears": [p[0] for p in points],
+            "trainingAqi": [round(p[1], 1) for p in points],
+            "slope": round(slope, 3),
+            "intercept": round(intercept, 1),
+            "r2": round(r2, 3) if r2 is not None else None,
+            "shapeFromYear": shape_year,
+        }
+
+    return forecast
+
+
 def main():
     df = pd.read_csv(CSV, parse_dates=["date"])
     df["aqi"] = df["pm2_5"].apply(pm25_to_aqi)
@@ -102,8 +175,11 @@ def main():
                     "no2": round(float(row["no2"]), 1),
                 })
 
+    forecast_2026 = build_forecast_2026(monthly, daily, years)
+
     payload = {
         "years": years,
+        "forecastYear": 2026,
         "months": list(range(1, 13)),
         "monthNames": [
             "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -112,6 +188,7 @@ def main():
         "monthly": monthly,
         "daily": daily,
         "hourly": hourly,
+        "forecast2026": forecast_2026,
     }
 
     for out in OUT_PATHS:

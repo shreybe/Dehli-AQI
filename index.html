@@ -25,7 +25,7 @@
         <h1 class="title">The Smoke <em>That Stays</em></h1>
         <p class="subtitle">
           Mean monthly AQI in discrete health bands. Select a year, then click a month to drill down —
-          explore pollutants, then draw your prediction for 2023.
+          explore pollutants, then see a <strong>2026</strong> forecast from a simple trend model.
         </p>
       </header>
 
@@ -109,29 +109,17 @@
 
       <section class="predict-section" id="predict-section">
         <div class="predict-header">
-          <h2>Predict <span id="predict-month-label">this month</span> in 2023</h2>
+          <h2>Model forecast: <span id="predict-month-label">Nov 2026</span></h2>
           <p>
-            Draw the daily AQI trend you expect for the same month in 2023.
-            When you're done, press <strong>Finish</strong> to reveal what the sensors actually recorded.
+            A <strong>linear trend model</strong> trained on monthly mean AQI from 2020–2023
+            extrapolates to <strong>2026</strong>. Dotted line = the month you selected; solid line = model prediction.
           </p>
         </div>
 
         <div class="predict-card">
-          <div class="predict-toolbar">
-            <button type="button" id="btn-clear-draw" class="btn-ghost">Clear drawing</button>
-            <span class="draw-hint">Click and drag on the chart below</span>
-          </div>
+          <div id="model-stats" class="model-stats"></div>
           <div class="predict-canvas-wrap" id="predict-wrap">
             <svg id="predict-grid" class="predict-svg"></svg>
-            <canvas id="predict-canvas"></canvas>
-          </div>
-          <div class="predict-actions">
-            <button type="button" id="btn-finish" class="btn-primary">Finish & reveal 2023</button>
-          </div>
-          <div id="reveal-panel" class="reveal-panel hidden">
-            <h3 id="reveal-title">Actual 2023</h3>
-            <p id="reveal-note" class="reveal-note"></p>
-            <div class="chart-body" id="chart-reveal"></div>
           </div>
         </div>
       </section>
