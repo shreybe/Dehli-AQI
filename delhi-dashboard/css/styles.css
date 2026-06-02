@@ -569,6 +569,8 @@ body.tunnel-locked #app.hidden {
 .chart-body {
   width: 100%;
   min-height: 220px;
+  overflow: visible;
+  padding-bottom: 0.5rem;
 }
 
 .chart-tall { min-height: 280px; }
@@ -577,13 +579,15 @@ body.tunnel-locked #app.hidden {
 .chart-body svg {
   display: block;
   width: 100%;
+  max-width: 100%;
+  height: auto;
   overflow: visible;
 }
 
 .axis text { fill: var(--muted-on-dark); font-size: 10px; font-family: var(--font); }
 .axis line, .axis path { stroke: rgba(140, 148, 158, 0.25); }
 
-.grid line { stroke: rgba(140, 148, 158, 0.1); }
+.grid line { stroke: rgba(140, 148, 158, 0.1); stroke-width: 1; }
 
 .line-aqi {
   fill: none;
@@ -592,7 +596,6 @@ body.tunnel-locked #app.hidden {
 }
 
 .area-aqi {
-  fill: url(#area-gradient-aqi);
   opacity: 0.85;
 }
 

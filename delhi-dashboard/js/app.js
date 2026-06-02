@@ -2,6 +2,7 @@
  * Delhi AQI Dashboard — radial calendar, drill-down, draw to predict 2026
  */
 (function () {
+  const EMBED = document.getElementById("aqi-dashboard")?.dataset.aqiEmbed === "true";
   const MONTHS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -23,6 +24,34 @@
   const viewHome = $("#view-home");
   const viewDetail = $("#view-detail");
 
+  function chartContainerWidth(node) {
+    if (!node) return 640;
+    const direct = node.clientWidth;
+    if (direct > 20) return direct;
+    const card = node.closest?.(".chart-card") || node.closest?.(".predict-card");
+    const fromCard = card?.clientWidth ? card.clientWidth - 40 : 0;
+    if (fromCard > 20) return fromCard;
+    const host = document.getElementById("aqi-dashboard");
+    const fromHost = host?.clientWidth ? host.clientWidth - 64 : 0;
+    if (fromHost > 20) return fromHost;
+    return Math.min(window.innerWidth - 48, 720);
+  }
+
+  function afterLayout(fn) {
+    requestAnimationFrame(() => requestAnimationFrame(fn));
+  }
+
+  function scrollToDetail() {
+    if (EMBED) {
+      (viewDetail?.querySelector(".detail-nav") || viewDetail)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   function dataJsonUrl() {
     const v = document.body?.dataset?.build || Date.now();
     return new URL(`data/delhi_aqi.json?v=${encodeURIComponent(v)}`, window.location.href).href;
@@ -37,7 +66,7 @@
   }
 
   function setLoadStatus(message, isError) {
-    const el = $("#cloud-load-status");
+    const el = $("#cloud-load-status") || $("#aqi-load-status");
     if (!el) return;
     el.textContent = message;
     el.classList.toggle("is-error", !!isError);
@@ -65,15 +94,26 @@
       }
       if (fill) fill.style.width = "100%";
       if (loader) loader.classList.add("hidden");
-      setLoadStatus("Data ready — scroll through the clouds to enter.", false);
+      setLoadStatus(
+        EMBED ? "Data ready — explore the calendar below." : "Data ready — scroll through the clouds to enter.",
+        false
+      );
 
       const startApp = () => {
-        $("#app").classList.remove("hidden");
+        const app = $("#app");
+        const loaderEl = $("#loader");
+        if (loaderEl) {
+          loaderEl.classList.add("hidden");
+          loaderEl.style.display = "none";
+        }
+        if (app) app.classList.remove("hidden");
         document.body.style.removeProperty("--tunnel-reveal");
         init();
       };
 
-      if (window.CloudTunnel) {
+      if (EMBED) {
+        startApp();
+      } else if (window.CloudTunnel) {
         $("#app").classList.remove("hidden");
         window.CloudTunnel.signalDataReady();
         window.CloudTunnel.onEmerge(startApp);
@@ -251,6 +291,7 @@
 
     viewHome.classList.remove("view-active");
     viewDetail.classList.add("view-active");
+    $("#app")?.classList.add("is-detail");
 
     $("#detail-title").textContent = `${mName} ${year}`;
     $("#detail-badge").textContent = `Delhi · ${year}`;
@@ -269,19 +310,46 @@
     $("#reveal-panel")?.classList.add("hidden");
     $("#btn-finish").disabled = false;
 
-    renderDetailCharts(year, month);
-    setupPredictChart(year, month);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    afterLayout(() => {
+      renderDetailCharts(year, month);
+      setupPredictChart(year, month);
+      scrollToDetail();
+    });
   }
 
   function closeDetail() {
     viewDetail.classList.remove("view-active");
     viewHome.classList.add("view-active");
+    $("#app")?.classList.remove("is-detail");
     state.selectedMonth = null;
+    if (EMBED) {
+      document.getElementById("aqi-dashboard-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   }
 
   function chartMargins() {
-    return { top: 28, right: 24, bottom: 36, left: 48 };
+    return { top: 32, right: 20, bottom: 48, left: 56 };
+  }
+
+  let chartUid = 0;
+
+  function nextGradId(prefix) {
+    chartUid += 1;
+    return `${prefix}-${chartUid}`;
+  }
+
+  function mountSvg(container, W, H) {
+    return d3
+      .select(container)
+      .append("svg")
+      .attr("width", W)
+      .attr("height", H)
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("overflow", "visible");
   }
 
   function renderDetailCharts(year, month) {
@@ -297,20 +365,18 @@
     const el = d3.select(selector);
     el.selectAll("*").remove();
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 240;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el
-      .append("svg")
-      .attr("width", W)
-      .attr("height", H);
+    const svg = mountSvg(selector, W, H);
 
+    const gradId = nextGradId("area-gradient-aqi");
     const defs = svg.append("defs");
     const grad = defs
       .append("linearGradient")
-      .attr("id", "area-gradient-aqi")
+      .attr("id", gradId)
       .attr("x1", 0)
       .attr("y1", 0)
       .attr("x2", 0)
@@ -330,14 +396,14 @@
     g.append("g")
       .attr("class", "grid")
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
-      .call((g) => g.select(".domain").remove());
+      .call((sel) => sel.select(".domain").remove());
 
     g.append("g")
-      .attr("class", "axis")
+      .attr("class", "axis axis-x")
       .attr("transform", `translate(0,${h})`)
       .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
+    g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5));
 
     const line = d3
       .line()
@@ -345,7 +411,14 @@
       .y((d) => y(d.aqi))
       .curve(d3.curveMonotoneX);
 
-    g.append("path").datum(daily).attr("class", "area-aqi").attr("d", line);
+    const area = d3
+      .area()
+      .x((d) => x(d.day))
+      .y0(h)
+      .y1((d) => y(d.aqi))
+      .curve(d3.curveMonotoneX);
+
+    g.append("path").datum(daily).attr("class", "area-aqi").attr("fill", `url(#${gradId})`).attr("d", area);
     g.append("path").datum(daily).attr("class", "line-aqi").attr("d", line);
 
     g.selectAll(".dot-aqi")
@@ -361,12 +434,12 @@
     const el = d3.select(selector);
     el.selectAll("*").remove();
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 280;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg(selector, W, H);
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleLinear().domain([1, d3.max(daily, (d) => d.day)]).range([0, w]);
@@ -410,7 +483,12 @@
       .attr("transform", `translate(${margin.left}, 8)`);
     series.forEach((s, i) => {
       const lg = legend.append("g").attr("transform", `translate(${i * 72}, 0)`);
-      lg.append("line").attr("x1", 0).attr("x2", 16).attr("y1", 4).attr("y2", 4).attr("class", s.cls);
+      lg.append("line")
+        .attr("class", `line-pollutant ${s.cls}`)
+        .attr("x1", 0)
+        .attr("x2", 16)
+        .attr("y1", 4)
+        .attr("y2", 4);
       lg.append("text").attr("x", 20).attr("y", 8).attr("fill", "#a8adb4").attr("font-size", 10).text(s.label);
     });
   }
@@ -424,12 +502,12 @@
     }
 
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 200;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg(selector, W, H);
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3
@@ -565,7 +643,7 @@
     const el = d3.select("#chart-reveal");
     el.selectAll("*").remove();
 
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 220;
     const mg = chartMargins();
     const iw = W - mg.left - mg.right;
@@ -581,7 +659,7 @@
       .nice()
       .range([ih, 0]);
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg("#chart-reveal", W, H);
     const g = svg.append("g").attr("transform", `translate(${mg.left},${mg.top})`);
 
     g.append("g")
@@ -604,7 +682,7 @@
 
     g.append("path").datum(series).attr("class", "line-actual").attr("d", line);
 
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    panel.scrollIntoView({ behavior: "smooth", block: EMBED ? "nearest" : "start" });
   }
 
   /* ─── Draw 2026 prediction (2023-style) ─── */
@@ -614,7 +692,7 @@
     const svg = d3.select("#predict-grid");
     svg.selectAll("*").remove();
 
-    const W = wrap.clientWidth;
+    const W = chartContainerWidth(wrap);
     const H = wrap.clientHeight;
     canvas.width = W;
     canvas.height = H;
@@ -779,6 +857,27 @@
     });
   }
 
-  loadData();
+  function boot() {
+    if (EMBED) {
+      const section = document.getElementById("aqi-dashboard-section");
+      if (!section) {
+        loadData();
+        return;
+      }
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries[0]?.isIntersecting) return;
+          observer.disconnect();
+          loadData();
+        },
+        { rootMargin: "240px 0px" }
+      );
+      observer.observe(section);
+      return;
+    }
+    loadData();
+  }
+
+  boot();
 })();
 

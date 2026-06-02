@@ -388,7 +388,8 @@
 #aqi-dashboard .chart-body {
   width: 100%;
   min-height: 220px;
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 0.5rem;
 }
 
 #aqi-dashboard .chart-tall { min-height: 280px; }
@@ -399,13 +400,24 @@
   width: 100%;
   max-width: 100%;
   height: auto;
-  overflow: hidden;
+  overflow: visible;
 }
 
-#aqi-dashboard .axis text { fill: var(--muted-on-dark); font-size: 10px; font-family: var(--font); }
-#aqi-dashboard .axis line, #aqi-dashboard .axis path { stroke: rgba(140, 148, 158, 0.25); }
+#aqi-dashboard .axis text {
+  fill: var(--muted-on-dark);
+  font-size: 10px;
+  font-family: var(--font);
+}
 
-#aqi-dashboard .grid line { stroke: rgba(140, 148, 158, 0.1); }
+#aqi-dashboard .axis line,
+#aqi-dashboard .axis path {
+  stroke: rgba(140, 148, 158, 0.25);
+}
+
+#aqi-dashboard .grid line {
+  stroke: rgba(140, 148, 158, 0.1);
+  stroke-width: 1;
+}
 
 #aqi-dashboard .line-aqi {
   fill: none;
@@ -414,11 +426,14 @@
 }
 
 #aqi-dashboard .area-aqi {
-  fill: url(#area-gradient-aqi);
   opacity: 0.85;
 }
 
-#aqi-dashboard .line-pollutant { fill: none; stroke-width: 1.8; opacity: 0.9; }
+#aqi-dashboard .line-pollutant {
+  fill: none;
+  stroke-width: 1.8;
+  opacity: 0.9;
+}
 #aqi-dashboard .line-pm25 { stroke: #aeb8c8; }
 #aqi-dashboard .line-no2 { stroke: #9aa8b8; }
 #aqi-dashboard .line-o3 { stroke: #b0bcc8; }

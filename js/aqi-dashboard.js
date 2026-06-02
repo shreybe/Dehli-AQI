@@ -331,7 +331,25 @@
   }
 
   function chartMargins() {
-    return { top: 28, right: 24, bottom: 36, left: 48 };
+    return { top: 32, right: 20, bottom: 48, left: 56 };
+  }
+
+  let chartUid = 0;
+
+  function nextGradId(prefix) {
+    chartUid += 1;
+    return `${prefix}-${chartUid}`;
+  }
+
+  function mountSvg(container, W, H) {
+    return d3
+      .select(container)
+      .append("svg")
+      .attr("width", W)
+      .attr("height", H)
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("overflow", "visible");
   }
 
   function renderDetailCharts(year, month) {
@@ -352,15 +370,13 @@
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el
-      .append("svg")
-      .attr("width", W)
-      .attr("height", H);
+    const svg = mountSvg(selector, W, H);
 
+    const gradId = nextGradId("area-gradient-aqi");
     const defs = svg.append("defs");
     const grad = defs
       .append("linearGradient")
-      .attr("id", "area-gradient-aqi")
+      .attr("id", gradId)
       .attr("x1", 0)
       .attr("y1", 0)
       .attr("x2", 0)
@@ -380,14 +396,14 @@
     g.append("g")
       .attr("class", "grid")
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
-      .call((g) => g.select(".domain").remove());
+      .call((sel) => sel.select(".domain").remove());
 
     g.append("g")
-      .attr("class", "axis")
+      .attr("class", "axis axis-x")
       .attr("transform", `translate(0,${h})`)
       .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
+    g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5));
 
     const line = d3
       .line()
@@ -395,7 +411,14 @@
       .y((d) => y(d.aqi))
       .curve(d3.curveMonotoneX);
 
-    g.append("path").datum(daily).attr("class", "area-aqi").attr("d", line);
+    const area = d3
+      .area()
+      .x((d) => x(d.day))
+      .y0(h)
+      .y1((d) => y(d.aqi))
+      .curve(d3.curveMonotoneX);
+
+    g.append("path").datum(daily).attr("class", "area-aqi").attr("fill", `url(#${gradId})`).attr("d", area);
     g.append("path").datum(daily).attr("class", "line-aqi").attr("d", line);
 
     g.selectAll(".dot-aqi")
@@ -416,7 +439,7 @@
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg(selector, W, H);
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleLinear().domain([1, d3.max(daily, (d) => d.day)]).range([0, w]);
@@ -460,7 +483,12 @@
       .attr("transform", `translate(${margin.left}, 8)`);
     series.forEach((s, i) => {
       const lg = legend.append("g").attr("transform", `translate(${i * 72}, 0)`);
-      lg.append("line").attr("x1", 0).attr("x2", 16).attr("y1", 4).attr("y2", 4).attr("class", s.cls);
+      lg.append("line")
+        .attr("class", `line-pollutant ${s.cls}`)
+        .attr("x1", 0)
+        .attr("x2", 16)
+        .attr("y1", 4)
+        .attr("y2", 4);
       lg.append("text").attr("x", 20).attr("y", 8).attr("fill", "#a8adb4").attr("font-size", 10).text(s.label);
     });
   }
@@ -479,7 +507,7 @@
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg(selector, W, H);
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3
@@ -631,7 +659,7 @@
       .nice()
       .range([ih, 0]);
 
-    const svg = el.append("svg").attr("width", W).attr("height", H);
+    const svg = mountSvg("#chart-reveal", W, H);
     const g = svg.append("g").attr("transform", `translate(${mg.left},${mg.top})`);
 
     g.append("g")
