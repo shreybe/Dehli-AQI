@@ -1,18 +1,35 @@
-/* ─── Scroll zoom portals ─── */
+/* ─── Scroll zoom portals (smooth, loose) ─── */
 
 .portal-scroll {
   position: relative;
-  height: var(--portal-height, 320vh);
   z-index: 2;
+}
+
+.portal-scroll--smoke {
+  view-timeline: --portal-smoke block;
+  height: 420vh;
+  background: linear-gradient(#38352f, #2a2826);
+}
+
+.portal-scroll--delhi {
+  view-timeline: --portal-delhi block;
+  height: 450vh;
+  background: #1a120e;
+}
+
+.portal-scroll--smog {
+  view-timeline: --portal-smog block;
+  height: 380vh;
+  background: #383735;
 }
 
 .portal-pin {
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  perspective: 820px;
-  perspective-origin: 50% 50%;
+  contain: layout style paint;
 }
 
 .portal-stage {
@@ -21,14 +38,33 @@
   height: 100%;
   display: grid;
   place-items: center;
-  will-change: transform;
   transform: scale(1);
+  transform-origin: var(--origin-x, 50%) var(--origin-y, 50%);
+  backface-visibility: hidden;
 }
 
-/* ─── Portal 1: Smoke O ─── */
-.portal-scroll--smoke {
-  --portal-height: 340vh;
-  background: linear-gradient(#38352f, #2a2826);
+.portal-hole {
+  display: inline-block;
+  position: relative;
+}
+
+.portal-content {
+  text-align: center;
+  z-index: 2;
+}
+
+.portal-scroll .portal-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  z-index: 6;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
 }
 
 .portal-scroll--smoke .portal-stage {
@@ -37,7 +73,8 @@
     linear-gradient(#020202, rgb(56, 53, 47));
 }
 
-.portal-scroll--smoke .portal-headline {
+.portal-scroll--smoke .portal-headline,
+.portal-scroll--smoke .portal-eyebrow {
   margin: 0;
   font-size: clamp(3.4rem, 10vw, 9.6rem);
   line-height: 0.92;
@@ -45,19 +82,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(245, 245, 245, 0.92);
-  text-align: center;
   text-shadow: 0 0 26px rgba(255, 255, 255, 0.18);
-}
-
-.portal-scroll--smoke .portal-eyebrow {
-  margin: 0 0 0.15rem;
-  font-size: clamp(3.4rem, 10vw, 9.6rem);
-  line-height: 0.92;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(245, 245, 245, 0.92);
-  text-align: center;
 }
 
 .portal-scroll--smoke .portal-subcopy {
@@ -68,23 +93,12 @@
   letter-spacing: 0.08em;
   line-height: 1.35;
   text-transform: uppercase;
-  text-align: center;
   color: rgba(245, 245, 245, 0.65);
-}
-
-.portal-hole {
-  display: inline-block;
-  position: relative;
-}
-
-/* ─── Portal 2: Delhi gateway ─── */
-.portal-scroll--delhi {
-  --portal-height: 360vh;
-  background: #1a120e;
 }
 
 .portal-scroll--delhi .portal-stage {
   display: block;
+  transform-origin: 50% 44%;
   background: #120c0a;
 }
 
@@ -99,9 +113,9 @@
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(18, 12, 10, 0.55) 0%,
-    rgba(18, 12, 10, 0.15) 40%,
-    rgba(18, 12, 10, 0.45) 100%
+    rgba(18, 12, 10, 0.5) 0%,
+    rgba(18, 12, 10, 0.12) 42%,
+    rgba(18, 12, 10, 0.4) 100%
   );
 }
 
@@ -114,7 +128,7 @@
 }
 
 .portal-scroll--delhi .portal-headline {
-  margin: 0;
+  margin: 0 auto;
   max-width: 16ch;
   font-family: "Instrument Serif", Georgia, serif;
   font-size: clamp(2.2rem, 5.5vw, 4.2rem);
@@ -136,21 +150,7 @@
   object-fit: cover;
   object-position: center 42%;
   display: block;
-}
-
-.portal-scroll--delhi .portal-tunnel--warm {
-  background: radial-gradient(
-    circle at 50% 46%,
-    rgba(255, 200, 120, 0.35) 0%,
-    rgba(40, 24, 16, 0.92) 55%,
-    #0a0604 100%
-  );
-}
-
-/* ─── Portal 3: Smog O ─── */
-.portal-scroll--smog {
-  --portal-height: 300vh;
-  background: #383735;
+  will-change: transform;
 }
 
 .portal-scroll--smog .portal-stage {
@@ -169,108 +169,259 @@
   text-align: center;
 }
 
-/* ─── Cloud tunnel (shared) ─── */
+/* ─── Lightweight fog (no per-frame blur) ─── */
 .portal-tunnel {
   position: absolute;
   inset: 0;
   z-index: 5;
-  opacity: 0;
   pointer-events: none;
   overflow: hidden;
-  --tunnel-fog: 0.85;
+  opacity: 0;
 }
 
 .portal-tunnel--cloud {
-  background: linear-gradient(
-    165deg,
-    #dce1e8 0%,
-    #b8bec6 45%,
-    #9aa3ad 100%
-  );
+  background: linear-gradient(165deg, #e8ecf2 0%, #b8bec6 50%, #8a939e 100%);
 }
 
-.portal-cloud-viewport {
-  position: absolute;
-  inset: -30%;
-  perspective: 700px;
-  transform-style: preserve-3d;
-}
-
-.portal-cloud-layer {
+.portal-tunnel--cloud::before,
+.portal-tunnel--cloud::after {
+  content: "";
   position: absolute;
   inset: -20%;
   border-radius: 50%;
-  filter: blur(44px);
-  transform-style: preserve-3d;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 55% 45% at 30% 40%, rgba(230, 232, 236, 0.55) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 70% 55%, rgba(195, 200, 208, 0.42) 0%, transparent 50%);
-}
-
-.portal-cloud-layer[data-depth="2"] {
-  background:
-    radial-gradient(ellipse 50% 42% at 65% 35%, rgba(210, 218, 228, 0.52) 0%, transparent 52%),
-    radial-gradient(ellipse 45% 38% at 25% 60%, rgba(175, 185, 198, 0.4) 0%, transparent 55%);
-}
-
-.portal-cloud-layer[data-depth="3"] {
-  filter: blur(54px);
-}
-
-.portal-cloud-layer[data-depth="4"] {
-  filter: blur(40px);
-  inset: -10%;
-}
-
-.portal-cloud-layer[data-depth="5"] {
-  filter: blur(66px);
-  background: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(230, 235, 242, 0.38) 0%, transparent 65%);
-}
-
-.portal-cloud-layer--dense {
-  filter: blur(74px);
   background: radial-gradient(
-    circle at 50% 50%,
-    rgba(240, 244, 248, 0.55) 0%,
-    rgba(180, 190, 205, 0.22) 35%,
+    ellipse 70% 55% at 50% 50%,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(200, 208, 218, 0.25) 45%,
     transparent 70%
+  );
+  transform: scale(1);
+  will-change: transform, opacity;
+}
+
+.portal-tunnel--cloud::after {
+  inset: -35%;
+  background: radial-gradient(
+    ellipse 60% 50% at 40% 45%,
+    rgba(240, 244, 248, 0.65) 0%,
+    transparent 65%
   );
 }
 
-.portal-cloud-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 85% 75% at 50% 48%,
-      transparent 0%,
-      rgba(70, 75, 82, calc(var(--tunnel-fog, 0.85))) 100%
-    ),
-    linear-gradient(180deg, rgba(220, 225, 232, 0.75) 0%, transparent 55%);
+.portal-tunnel--warm {
+  background: radial-gradient(
+    circle at 50% 44%,
+    rgba(255, 210, 140, 0.5) 0%,
+    rgba(50, 30, 20, 0.85) 50%,
+    #0a0604 100%
+  );
 }
 
-.portal-scroll .portal-cue {
+.portal-tunnel--warm::before {
+  content: "";
   position: absolute;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%);
-  z-index: 6;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  opacity: calc(1 - var(--portal-p, 0) * 3);
-  pointer-events: none;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 44%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.55) 72%
+  );
+}
+
+/* ═══ CSS scroll-driven (native smooth zoom) ═══ */
+@supports (animation-timeline: view()) {
+  .portals-css .portal-scroll--smoke .portal-stage {
+    animation: portal-zoom-smoke linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 0% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smoke .portal-content {
+    animation: portal-fade-copy linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 0% cover 45%;
+  }
+
+  .portals-css .portal-scroll--smoke .portal-tunnel--cloud {
+    animation: portal-fog-in linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 15% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smoke .portal-tunnel--cloud::before {
+    animation: portal-fog-drift linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 15% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smoke .portal-tunnel--cloud::after {
+    animation: portal-fog-drift-alt linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 20% cover 100%;
+  }
+
+  .portals-css .portal-scroll--delhi .portal-stage {
+    animation: portal-zoom-gate linear both;
+    animation-timeline: view(--portal-delhi);
+    animation-range: cover 0% cover 100%;
+  }
+
+  .portals-css .portal-scroll--delhi .portal-delhi-copy {
+    animation: portal-fade-copy linear both;
+    animation-timeline: view(--portal-delhi);
+    animation-range: cover 0% cover 40%;
+  }
+
+  .portals-css .portal-scroll--delhi .portal-tunnel--warm {
+    animation: portal-warm-in linear both;
+    animation-timeline: view(--portal-delhi);
+    animation-range: cover 18% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smog .portal-stage {
+    animation: portal-zoom-smog linear both;
+    animation-timeline: view(--portal-smog);
+    animation-range: cover 0% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smog .portal-headline {
+    animation: portal-fade-copy linear both;
+    animation-timeline: view(--portal-smog);
+    animation-range: cover 0% cover 42%;
+  }
+
+  .portals-css .portal-scroll--smog .portal-tunnel--cloud {
+    animation: portal-fog-in linear both;
+    animation-timeline: view(--portal-smog);
+    animation-range: cover 18% cover 100%;
+  }
+
+  .portals-css .portal-scroll--smoke .portal-cue {
+    animation: portal-cue-fade linear both;
+    animation-timeline: view(--portal-smoke);
+    animation-range: cover 0% cover 30%;
+  }
+
+  .portals-css .portal-scroll--delhi .portal-cue {
+    animation: portal-cue-fade linear both;
+    animation-timeline: view(--portal-delhi);
+    animation-range: cover 0% cover 30%;
+  }
+
+  .portals-css .portal-scroll--smog .portal-cue {
+    animation: portal-cue-fade linear both;
+    animation-timeline: view(--portal-smog);
+    animation-range: cover 0% cover 30%;
+  }
+}
+
+@keyframes portal-zoom-smoke {
+  0% { transform: scale(1); }
+  100% { transform: scale(28); }
+}
+
+@keyframes portal-zoom-gate {
+  0% { transform: scale(1); }
+  100% { transform: scale(9); }
+}
+
+@keyframes portal-zoom-smog {
+  0% { transform: scale(1); }
+  100% { transform: scale(22); }
+}
+
+@keyframes portal-fade-copy {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes portal-fog-in {
+  0% { opacity: 0; }
+  12% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+@keyframes portal-fog-drift {
+  0% { transform: scale(1) translateY(0); opacity: 0.4; }
+  100% { transform: scale(4.5) translateY(-8%); opacity: 1; }
+}
+
+@keyframes portal-fog-drift-alt {
+  0% { transform: scale(1.2) translateX(0); opacity: 0.3; }
+  100% { transform: scale(5) translateX(6%); opacity: 0.95; }
+}
+
+@keyframes portal-warm-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes portal-cue-fade {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+/* ═══ JS fallback (lerped --portal-p) ═══ */
+.portals-js .portal-scroll--smoke .portal-stage {
+  transform: scale(calc(1 + var(--portal-p, 0) * 27));
+}
+
+.portals-js .portal-scroll--delhi .portal-stage {
+  transform: scale(calc(1 + var(--portal-p, 0) * 8));
+}
+
+.portals-js .portal-scroll--smog .portal-stage {
+  transform: scale(calc(1 + var(--portal-p, 0) * 21));
+}
+
+.portals-js .portal-content,
+.portals-js .portal-scroll--smog .portal-headline,
+.portals-js .portal-delhi-copy {
+  opacity: calc(1 - var(--portal-p, 0) * 2.2);
+}
+
+.portals-js .portal-tunnel--cloud {
+  opacity: calc(clamp(0, (var(--portal-p, 0) - 0.12) / 0.88, 1));
+}
+
+.portals-js .portal-tunnel--cloud::before {
+  transform: scale(calc(1 + var(--portal-p, 0) * 3.5)) translateY(calc(var(--portal-p, 0) * -8%));
+  opacity: calc(0.35 + var(--portal-p, 0) * 0.65);
+}
+
+.portals-js .portal-tunnel--cloud::after {
+  transform: scale(calc(1.2 + var(--portal-p, 0) * 3.8)) translateX(calc(var(--portal-p, 0) * 6%));
+  opacity: calc(0.3 + var(--portal-p, 0) * 0.65);
+}
+
+.portals-js .portal-tunnel--warm {
+  opacity: calc(clamp(0, (var(--portal-p, 0) - 0.15) / 0.85, 1));
+}
+
+.portals-js .portal-scroll .portal-cue {
+  opacity: calc(1 - var(--portal-p, 0) * 3.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-scroll {
+    height: auto;
+    min-height: 100vh;
+  }
+  .portal-pin {
+    position: relative;
+  }
+  .portal-stage,
+  .portal-tunnel,
+  .portal-content,
+  .portal-cue {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 
 @media (max-width: 720px) {
-  .portal-scroll {
-    --portal-height: 280vh;
-  }
-  .portal-scroll--delhi {
-    --portal-height: 300vh;
-  }
+  .portal-scroll--smoke { height: 360vh; }
+  .portal-scroll--delhi { height: 380vh; }
+  .portal-scroll--smog { height: 320vh; }
 }

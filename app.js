@@ -82,7 +82,8 @@
       }
 
       function scrubSmokeWithScroll(deltaY) {
-        if (smokeCleared || deltaY <= 0 || window.scrollY > 2) return false;
+        if (smokeCleared || deltaY <= 0) return false;
+        if (document.querySelector("#portal-smoke")) return false;
 
         const previousProgress = smokeScrollProgress;
         smokeScrollProgress = Math.min(1, previousProgress + deltaY / SMOKE_SCROLL_DISTANCE);
