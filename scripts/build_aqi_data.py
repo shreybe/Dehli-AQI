@@ -17,6 +17,17 @@ OUT_PATHS = [
 
 FORECAST_YEAR = 2026
 
+MONTH_NAMES = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
+
+# Years with incomplete sensor coverage — filled from a reference year
+PARTIAL_YEARS = {
+    2020: {"ref": 2021, "overlap": [11, 12]},
+    2023: {"ref": 2022, "overlap": [1]},
+}
+
 
 def num(value, default: float = 0.0, ndigits: int | None = 1) -> float:
     """JSON-safe number (no NaN / Infinity)."""
@@ -254,6 +265,120 @@ def estimate_missing_2026(
             meta.setdefault(key, {"source": "observed"})
 
 
+def overlap_scale(
+    monthly: dict, target_year: int, ref_year: int, overlap_months: list[int]
+) -> float:
+    ratios = []
+    ty = monthly.get(str(target_year), {})
+    ry = monthly.get(str(ref_year), {})
+    for m in overlap_months:
+        t = ty.get(str(m))
+        r = ry.get(str(m))
+        if t and r and r["aqi"] > 0:
+            ratios.append(t["aqi"] / r["aqi"])
+    return sum(ratios) / len(ratios) if ratios else 1.0
+
+
+def scale_daily(ref_daily: list, pred_mean: float) -> list:
+    if len(ref_daily) < 1:
+        return []
+    shape_mean = sum(d["aqi"] for d in ref_daily) / len(ref_daily)
+    sc = pred_mean / shape_mean if shape_mean > 0 else 1.0
+    out = []
+    for d in ref_daily:
+        out.append({
+            "day": d["day"],
+            "aqi": num(d["aqi"] * sc, 0.0, 1),
+            "pm25": num(d.get("pm25", 0) * sc, 0.0, 1),
+            "no2": num(d.get("no2", 0) * sc, 0.0, 1),
+            "o3": num(d.get("o3", 0) * sc, 0.0, 1),
+            "so2": num(d.get("so2", 0) * sc, 0.0, 1),
+        })
+    return out
+
+
+def scale_monthly_record(ref: dict, pred_mean: float) -> dict:
+    sc = pred_mean / ref["aqi"] if ref.get("aqi", 0) > 0 else 1.0
+    rec = {
+        "aqi": num(pred_mean, 0.0, 1),
+        "pm25": num(ref.get("pm25", 0) * sc, 0.0, 1),
+        "pm10": num(ref.get("pm10", 0) * sc, 0.0, 1),
+        "no2": num(ref.get("no2", 0) * sc, 0.0, 1),
+        "no": num(ref.get("no", 0) * sc, 0.0, 2),
+        "o3": num(ref.get("o3", 0) * sc, 0.0, 1),
+        "so2": num(ref.get("so2", 0) * sc, 0.0, 1),
+        "co": num(ref.get("co", 0) * sc, 0.0, 1),
+        "nh3": num(ref.get("nh3", 0) * sc, 0.0, 1),
+        "bin": aqi_bin(pred_mean),
+        "readings": 0,
+        "estimated": True,
+    }
+    return rec
+
+
+def scale_hourly(ref_hourly: list, ref_year: int, target_year: int, scale: float) -> list:
+    out = []
+    for h in ref_hourly:
+        t = h["t"]
+        if t.startswith(f"{ref_year}-"):
+            t = f"{target_year}-{t[5:]}"
+        out.append({
+            "t": t,
+            "aqi": num(h["aqi"] * scale, 0.0, 1),
+            "pm25": num(h.get("pm25", 0) * scale, 0.0, 1),
+            "no2": num(h.get("no2", 0) * scale, 0.0, 1),
+        })
+    return out
+
+
+def fill_partial_years(
+    monthly: dict, daily: dict, hourly: dict, meta: dict
+) -> None:
+    """Estimate missing months for sparse years (2020, 2023) from a full reference year."""
+    for year, cfg in PARTIAL_YEARS.items():
+        ref_year = cfg["ref"]
+        overlap = cfg["overlap"]
+        ys, rs = str(year), str(ref_year)
+        scale = overlap_scale(monthly, year, ref_year, overlap)
+
+        monthly.setdefault(ys, {})
+        daily.setdefault(ys, {})
+        hourly.setdefault(ys, {})
+        meta.setdefault(ys, {})
+
+        for month in range(1, 13):
+            key = str(month)
+            existing = monthly[ys].get(key)
+            if existing and existing.get("readings", 0) > 0:
+                meta[ys][key] = {"source": "observed"}
+                continue
+
+            ref_m = monthly.get(rs, {}).get(key)
+            ref_d = daily.get(rs, {}).get(key, [])
+            if not ref_m or len(ref_d) < 5:
+                continue
+
+            pred_mean = num(ref_m["aqi"] * scale, 0.0, 1)
+            daily[ys][key] = scale_daily(ref_d, pred_mean)
+            monthly[ys][key] = scale_monthly_record(ref_m, pred_mean)
+
+            ref_h = hourly.get(rs, {}).get(key, [])
+            if ref_h:
+                sc = pred_mean / ref_m["aqi"] if ref_m["aqi"] > 0 else scale
+                hourly[ys][key] = scale_hourly(ref_h, ref_year, year, sc)
+            else:
+                hourly[ys][key] = []
+
+            mlabel = MONTH_NAMES[month - 1]
+            meta[ys][key] = {
+                "source": "estimated",
+                "note": (
+                    f"Estimated {mlabel} {year} from {mlabel} {ref_year}, "
+                    f"scaled by observed overlap ({scale:.2f}×)."
+                ),
+            }
+
+
 def main():
     legacy = load_legacy()
     new = load_new_timeseries()
@@ -276,18 +401,19 @@ def main():
     if str(FORECAST_YEAR) in daily or CSV_NEW.is_file():
         estimate_missing_2026(monthly, daily, meta_2026)
 
+    meta_partial: dict = {}
+    fill_partial_years(monthly, daily, hourly_dict, meta_partial)
+
     payload = {
         "years": years,
         "forecastYear": FORECAST_YEAR,
         "months": list(range(1, 13)),
-        "monthNames": [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        ],
+        "monthNames": MONTH_NAMES,
         "monthly": monthly,
         "daily": daily,
         "hourly": hourly_dict,
         "actual2026Meta": meta_2026,
+        "partialYearMeta": meta_partial,
     }
 
     payload = sanitize_for_json(payload)
@@ -302,6 +428,10 @@ def main():
             obs = sum(1 for m in meta_2026.values() if m.get("source") == "observed")
             est = sum(1 for m in meta_2026.values() if m.get("source") == "estimated")
             print(f"  2026 months: {obs} observed, {est} estimated")
+        for ys, months in meta_partial.items():
+            obs = sum(1 for m in months.values() if m.get("source") == "observed")
+            est = sum(1 for m in months.values() if m.get("source") == "estimated")
+            print(f"  {ys}: {obs} observed, {est} estimated months")
 
 
 if __name__ == "__main__":

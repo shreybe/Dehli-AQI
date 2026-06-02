@@ -105,6 +105,10 @@
     return DATA?.monthly?.[String(year)]?.[String(month)] ?? null;
   }
 
+  function partialMeta(year, month) {
+    return DATA?.partialYearMeta?.[String(year)]?.[String(month)] ?? null;
+  }
+
   function dailySeries(year, month) {
     return DATA?.daily?.[String(year)]?.[String(month)] ?? [];
   }
@@ -241,13 +245,20 @@
     const rec = monthData(year, month);
     const mName = MONTHS[month - 1];
     const fcYear = DATA?.forecastYear ?? 2026;
+    const partial = partialMeta(year, month);
 
     viewHome.classList.remove("view-active");
     viewDetail.classList.add("view-active");
 
     $("#detail-title").textContent = `${mName} ${year}`;
     $("#detail-badge").textContent = `Delhi · ${year}`;
-    $("#detail-sub").textContent = `Mean AQI ${rec.aqi} (${labelForBin(rec.bin)}) · ${rec.readings.toLocaleString()} hourly readings`;
+    const readingsNote =
+      rec.readings > 0
+        ? `${rec.readings.toLocaleString()} hourly readings`
+        : "estimated month (no direct sensor coverage)";
+    $("#detail-sub").textContent = `Mean AQI ${rec.aqi} (${labelForBin(rec.bin)}) · ${readingsNote}${
+      partial?.source === "estimated" ? " · scaled from nearby years" : ""
+    }`;
     $("#predict-month-label").textContent = `${mName} ${fcYear}`;
 
     state.drawPoints = [];
