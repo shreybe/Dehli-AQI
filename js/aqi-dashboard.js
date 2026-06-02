@@ -72,7 +72,13 @@
       );
 
       const startApp = () => {
-        $("#app").classList.remove("hidden");
+        const app = $("#app");
+        const loaderEl = $("#loader");
+        if (loaderEl) {
+          loaderEl.classList.add("hidden");
+          loaderEl.style.display = "none";
+        }
+        if (app) app.classList.remove("hidden");
         document.body.style.removeProperty("--tunnel-reveal");
         init();
       };
