@@ -1,0 +1,614 @@
+/* Scoped Delhi AQI dashboard — embedded in narrative */
+:root {
+  --bg: #d4734a;
+  --bg-deep: #b85f38;
+  --bg-panel: #3a3634;
+  --bg-card: #2e2b29;
+  --border: rgba(80, 75, 70, 0.35);
+  --text: #1c1c1c;
+  --text-on-dark: #e8eaed;
+  --muted: #4a4542;
+  --muted-on-dark: #a8adb4;
+  --accent: #c5c9cf;
+  --accent-strong: #9aa3ad;
+  --accent-dim: rgba(197, 201, 207, 0.14);
+  --accent-line: #d0d5db;
+  --accent-glow: rgba(180, 188, 198, 0.35);
+  --smoke: rgba(180, 188, 198, 0.5);
+  --smoke-bright: rgba(232, 235, 240, 0.95);
+  --font: "DM Sans", system-ui, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+}
+
+#aqi-dashboard {
+  position: relative;
+  font-family: var(--font);
+  background: linear-gradient(165deg, #e08855 0%, var(--bg) 35%, var(--bg-deep) 100%);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: auto;
+}
+
+#aqi-dashboard *, #aqi-dashboard *::before, #aqi-dashboard *::after {
+  box-sizing: border-box;
+}
+
+/* ─── Loader ─── */
+#aqi-dashboard .loader {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#aqi-dashboard .loader-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+#aqi-dashboard .loader-bar {
+  width: 220px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#aqi-dashboard .loader-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+/* ─── Layout ─── */
+#aqi-dashboard .app { opacity: 0; animation: fade-in 0.8s ease 0.2s forwards; }
+@keyframes fade-in { #aqi-dashboard to { opacity: 1; } }
+
+#aqi-dashboard .view { display: none; min-height: auto; padding: 0 2rem 4rem; }
+#aqi-dashboard .view-active { display: block; }
+
+#aqi-dashboard .hero {
+  padding: 3rem 0 2rem;
+  max-width: 720px;
+}
+
+#aqi-dashboard .eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard .title {
+  font-family: var(--serif);
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  margin-bottom: 1rem;
+}
+
+#aqi-dashboard .title em { font-style: italic; color: #5c636b; }
+
+#aqi-dashboard .subtitle {
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+#aqi-dashboard .dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+#aqi-dashboard .panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  color: var(--text-on-dark);
+}
+
+#aqi-dashboard .panel-head h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-on-dark);
+}
+
+#aqi-dashboard .panel-hint {
+  font-size: 0.8rem;
+  color: var(--muted-on-dark);
+  margin-top: 0.35rem;
+}
+
+#aqi-dashboard .radial-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+#aqi-dashboard #radial-chart {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  overflow: visible;
+}
+
+#aqi-dashboard .radial-center-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+#aqi-dashboard .month-arc {
+  cursor: pointer;
+  transition: opacity 0.2s, filter 0.2s;
+}
+
+#aqi-dashboard .month-arc.no-data {
+  cursor: default;
+  opacity: 0.35;
+}
+
+#aqi-dashboard .month-arc.has-data:hover {
+  filter: brightness(1.15);
+}
+
+#aqi-dashboard .month-label {
+  fill: var(--muted-on-dark);
+  font-size: 11px;
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+#aqi-dashboard .month-label.burn { fill: var(--accent); font-weight: 600; }
+
+/* Year control */
+#aqi-dashboard .year-control label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted-on-dark);
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard #year-slider {
+  width: 100%;
+  accent-color: var(--accent-strong);
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard .year-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#aqi-dashboard .year-big {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+#aqi-dashboard .btn-ghost {
+  font-family: var(--font);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid rgba(180, 188, 198, 0.35);
+  border-radius: 6px;
+  color: var(--muted-on-dark);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#aqi-dashboard .btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#aqi-dashboard .legend-block {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+#aqi-dashboard .legend-block h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-on-dark);
+  margin-bottom: 0.25rem;
+}
+
+#aqi-dashboard .legend-note {
+  font-size: 0.75rem;
+  color: var(--muted-on-dark);
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard .legend-bins {
+  list-style: none;
+}
+
+#aqi-dashboard .legend-bins li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted-on-dark);
+  margin-bottom: 0.4rem;
+}
+
+#aqi-dashboard .legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+#aqi-dashboard .stat-block {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+#aqi-dashboard .stat-block h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard .stat-list div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+#aqi-dashboard .stat-list dt { color: var(--muted-on-dark); }
+#aqi-dashboard .stat-list dd { font-weight: 600; color: var(--accent); }
+
+/* ─── Detail view ─── */
+#aqi-dashboard #view-detail {
+  background: linear-gradient(180deg, #e08855 0%, var(--bg) 30%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+  color: var(--text-on-dark);
+}
+
+#aqi-dashboard .detail-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0 1rem;
+}
+
+#aqi-dashboard .btn-back {
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#aqi-dashboard .btn-back:hover { background: var(--accent-dim); }
+
+#aqi-dashboard .detail-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted-on-dark);
+}
+
+#aqi-dashboard .detail-hero {
+  margin-bottom: 2rem;
+}
+
+#aqi-dashboard .detail-hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+  color: var(--text-on-dark);
+}
+
+#aqi-dashboard .detail-sub { color: var(--muted-on-dark); font-size: 1rem; }
+
+#aqi-dashboard .detail-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+#aqi-dashboard .chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+#aqi-dashboard .chart-primary { grid-column: 1 / -1; }
+
+#aqi-dashboard .chart-narrow { grid-column: 1 / -1; }
+
+#aqi-dashboard .chart-head h2 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+#aqi-dashboard .chart-unit { font-weight: 400; color: var(--muted); }
+
+#aqi-dashboard .chart-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+#aqi-dashboard .chart-body {
+  width: 100%;
+  min-height: 220px;
+}
+
+#aqi-dashboard .chart-tall { min-height: 280px; }
+
+/* D3 chart styles */
+#aqi-dashboard .chart-body svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+#aqi-dashboard .axis text { fill: var(--muted-on-dark); font-size: 10px; font-family: var(--font); }
+#aqi-dashboard .axis line, #aqi-dashboard .axis path { stroke: rgba(140, 148, 158, 0.25); }
+
+#aqi-dashboard .grid line { stroke: rgba(140, 148, 158, 0.1); }
+
+#aqi-dashboard .line-aqi {
+  fill: none;
+  stroke: var(--accent-line);
+  stroke-width: 2.5;
+}
+
+#aqi-dashboard .area-aqi {
+  fill: url(#area-gradient-aqi);
+  opacity: 0.85;
+}
+
+#aqi-dashboard .line-pollutant { fill: none; stroke-width: 1.8; opacity: 0.9; }
+#aqi-dashboard .line-pm25 { stroke: #aeb8c8; }
+#aqi-dashboard .line-no2 { stroke: #9aa8b8; }
+#aqi-dashboard .line-o3 { stroke: #b0bcc8; }
+#aqi-dashboard .line-so2 { stroke: #c4ccd6; }
+
+#aqi-dashboard .dot-aqi { fill: var(--accent-line); }
+
+#aqi-dashboard .line-actual {
+  fill: none;
+  stroke: var(--smoke-bright);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+
+#aqi-dashboard .line-prediction {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  opacity: 0.9;
+}
+
+/* ─── Predict section ─── */
+#aqi-dashboard .predict-section {
+  padding: 3rem 0 5rem;
+  border-top: 1px solid var(--border);
+}
+
+#aqi-dashboard .predict-header {
+  max-width: 640px;
+  margin-bottom: 1.5rem;
+}
+
+#aqi-dashboard .predict-header h2 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+#aqi-dashboard .predict-header h2 { color: var(--text-on-dark); }
+#aqi-dashboard .predict-header p { color: var(--muted-on-dark); line-height: 1.65; }
+
+#aqi-dashboard .predict-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+#aqi-dashboard .model-stats {
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  background: rgba(80, 85, 90, 0.25);
+  border: 1px solid rgba(180, 188, 198, 0.2);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+#aqi-dashboard .model-stats strong { color: var(--accent); }
+
+#aqi-dashboard .model-stats .model-eq {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--accent-strong);
+  margin-top: 0.5rem;
+}
+
+#aqi-dashboard .line-ref {
+  fill: none;
+  stroke: var(--smoke);
+  stroke-width: 1.5;
+  stroke-dasharray: 5, 4;
+}
+
+#aqi-dashboard .line-forecast {
+  fill: none;
+  stroke: var(--smoke-bright);
+  stroke-width: 2.5;
+}
+
+#aqi-dashboard .ref-line-label line, #aqi-dashboard .ref-line-label rect { stroke: rgba(160, 168, 178, 0.45); }
+#aqi-dashboard .ref-line-label text:first-of-type { fill: var(--accent-strong); }
+#aqi-dashboard .fc-line-label rect { fill: rgba(42, 40, 38, 0.92); stroke: rgba(200, 205, 212, 0.4); }
+#aqi-dashboard .fc-line-label text:first-of-type { fill: var(--accent-line); }
+
+#aqi-dashboard .predict-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+#aqi-dashboard .draw-hint { font-size: 0.8rem; color: var(--muted-on-dark); }
+
+#aqi-dashboard .compare-panel {
+  margin-top: 1.5rem;
+  padding: 1rem 1.15rem;
+  background: rgba(80, 85, 90, 0.25);
+  border: 1px solid rgba(180, 188, 198, 0.2);
+  border-radius: 8px;
+  animation: fade-in 0.5s ease;
+}
+
+#aqi-dashboard .compare-panel h3 {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+#aqi-dashboard .compare-note {
+  font-size: 0.9rem;
+  color: var(--muted-on-dark);
+  line-height: 1.6;
+}
+
+#aqi-dashboard .compare-note strong { color: var(--text-on-dark); }
+
+#aqi-dashboard #predict-canvas.is-locked {
+  cursor: default;
+  opacity: 0.85;
+}
+
+#aqi-dashboard .predict-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: linear-gradient(180deg, #353230 0%, #2a2826 100%);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#aqi-dashboard .predict-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#aqi-dashboard #predict-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+#aqi-dashboard .predict-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  gap: 1rem;
+}
+
+#aqi-dashboard .btn-primary {
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-strong);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#aqi-dashboard .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
+
+#aqi-dashboard .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#aqi-dashboard .reveal-panel {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  animation: fade-in 0.6s ease;
+}
+
+#aqi-dashboard .reveal-panel h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  margin-bottom: 0.5rem;
+}
+
+#aqi-dashboard .reveal-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+  #aqi-dashboard .dashboard-grid { grid-template-columns: 1fr; }
+  #aqi-dashboard .detail-charts { grid-template-columns: 1fr; }
+  #aqi-dashboard .view { padding: 0 1rem 3rem; }
+}

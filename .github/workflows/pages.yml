@@ -1,4 +1,4 @@
-# Deploy delhi-dashboard to GitHub Pages (works with Source = GitHub Actions)
+# Deploy combined narrative + AQI dashboard to GitHub Pages
 name: Deploy GitHub Pages
 
 on:
@@ -37,13 +37,15 @@ jobs:
       - name: Prepare site bundle
         run: |
           rm -rf _site
-          cp -r delhi-dashboard _site
-          cp -r delhi-dashboard/data _site/data 2>/dev/null || true
+          mkdir -p _site
+          cp index.html styles.css app.js _site/
+          cp -r assets css js data _site/
+          cp delhi-dashboard/data/delhi_aqi.json _site/data/ 2>/dev/null || true
           test -f data/delhi_aqi.json && cp data/delhi_aqi.json _site/data/
           touch _site/.nojekyll
-          test -f _site/data/delhi_aqi.json || (echo "ERROR: missing _site/data/delhi_aqi.json" && exit 1)
-          echo "Site files:" && find _site -type f | head -20
-          ls -lh _site/data/delhi_aqi.json
+          test -f _site/data/delhi_aqi.json || (echo "ERROR: missing delhi_aqi.json" && exit 1)
+          test -f _site/app.js || (echo "ERROR: missing narrative app.js" && exit 1)
+          echo "Site files:" && find _site -type f | head -30
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

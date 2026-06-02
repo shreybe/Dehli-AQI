@@ -1,56 +1,503 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta name="build" content="data-load-fix-v7" />
-  <title>Delhi AQI · The Smoke That Stays</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=data-load-fix-v7" />
-</head>
-<body data-build="data-load-fix-v7">
-  <script>
-    (function () {
-      var v = document.body.dataset.build || Date.now();
-      window.__delhiDataPromise = fetch("data/delhi_aqi.json?v=" + encodeURIComponent(v), {
-        cache: "no-store",
-      }).then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      });
-    })();
-  </script>
-  <div id="cloud-intro" class="cloud-intro" aria-label="Enter through the haze">
-    <div class="cloud-viewport">
-      <div class="cloud-layer" data-depth="1"></div>
-      <div class="cloud-layer" data-depth="2"></div>
-      <div class="cloud-layer" data-depth="3"></div>
-      <div class="cloud-layer" data-depth="4"></div>
-      <div class="cloud-layer" data-depth="5"></div>
-      <div class="cloud-layer cloud-layer--dense" data-depth="6"></div>
-    </div>
-    <div class="cloud-vignette"></div>
-    <div class="cloud-hint">
-      <p class="cloud-hint-eyebrow">Delhi · AQI</p>
-      <p class="cloud-hint-title">The Smoke <em>That Stays</em></p>
-      <p class="cloud-hint-sub">Scroll or swipe to move through the haze</p>
-      <div class="cloud-progress" aria-hidden="true"><div id="cloud-progress-fill"></div></div>
-      <p id="cloud-load-status" class="cloud-load-status">Loading sensor data…</p>
-      <button type="button" id="cloud-enter" class="cloud-enter hidden" title="Use after scrolling through the haze">Enter dashboard →</button>
-    </div>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Breathing Smoke · Delhi AQI</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+  </head>
+  <body>
+    <section aria-label="Breathing Smoke intro sequence" class="intro-smoke">
+      <div class="title-stack">
+        <h1>Breathing</h1>
+        <h1>Smoke</h1>
+        <p class="dek">
+          How crop burning in Northern India chokes Delhi every winter
+        </p>
+        <p class="byline">
+          By Ishayu Ghosh, Shreya Bharathwajan, and Annabelle Guiditta
+        </p>
+      </div>
+      <canvas id="smokeCanvas"></canvas>
+      <div aria-hidden="true" class="eraser-cursor"></div>
+      <div class="scroll-cue">wipe the smoke or scroll</div>
+    </section>
+    <section aria-hidden="true" class="after-space"></section>
 
-  <div id="loader" class="loader hidden">
+    <section
+      aria-label="What is the problem with Delhi smog?"
+      class="problem-section"
+      id="problem-section"
+    >
+      <div aria-hidden="true" class="smoke-cap">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div aria-hidden="true" class="city-stage">
+        <div class="birds"></div>
+        <div class="skyline">
+          <div class="layer back"></div>
+          <div class="layer mid"></div>
+          <div class="monument qutub"></div>
+          <div class="monument india-gate"></div>
+          <div class="monument dome"></div>
+          <div class="monument lotus"></div>
+          <div class="front-slums"></div>
+        </div>
+        <div class="haze"></div>
+      </div>
+      <article class="text-panel">
+        <p class="kicker">What is the problem?</p>
+        <h1>Every year, Delhi disappears into smog.</h1>
+        <div class="body-copy">
+          <p>
+            Delhi and the broader National Capital Region are frequently ranked
+            among the most polluted major urban areas in the world. For people
+            who live there, the pollution is not an abstract environmental
+            issue. It is something that settles over roads, homes, schools,
+            markets, and lungs.
+          </p>
+          <p>
+            In a city of more than <strong>thirty million people</strong>, toxic
+            air turns ordinary routines into daily exposure. The haze can blur
+            the skyline, dim the sun, and make breathing feel heavy even before
+            anyone checks an air quality number.
+          </p>
+          <p>
+            Long-term exposure to polluted air is linked to a significant
+            reduction in life expectancy. Even healthy residents can suffer from
+            chronic headaches, itchy eyes, coughing, and respiratory issues.
+            This section begins with the simplest question: before looking at
+            fires, farms, and data, what does it mean for a city to live under
+            air that is unsafe to breathe?
+          </p>
+        </div>
+      </article>
+      <div
+        class="article-clippings"
+        aria-label="Related reporting on Delhi air pollution"
+      >
+        <a
+          class="article-clip clip-cnn"
+          href="https://edition.cnn.com/2017/11/10/health/delhi-pollution-equivalent-cigarettes-a-day"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read CNN article: Breathing in Delhi air equivalent to smoking 44 cigarettes a day"
+        >
+          <img
+            src="assets/articles/cnn.png"
+            alt="CNN article screenshot about Delhi air being equivalent to smoking 44 cigarettes a day"
+          />
+        </a>
+        <a
+          class="article-clip clip-bbc"
+          href="https://www.bbc.com/news/articles/cwyvdmyd8mpo"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read BBC article: Toxic haze covers Delhi as air quality worsens"
+        >
+          <img
+            src="assets/articles/bbc.png"
+            alt="BBC article screenshot showing toxic haze covering Delhi"
+          />
+        </a>
+        <a
+          class="article-clip clip-chicago"
+          href="https://climate.uchicago.edu/news/how-bad-is-delhis-air-like-smoking-half-a-pack-of-cigarettes/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read University of Chicago article: How bad is Delhi's air?"
+        >
+          <img
+            src="assets/articles/chic.png"
+            alt="University of Chicago article screenshot about Delhi air and cigarettes"
+          />
+        </a>
+        <a
+          class="article-clip clip-nyt"
+          href="https://www.nytimes.com/2025/11/30/world/asia/india-delhi-pollution.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read New York Times article: India Is a Rising Power, but Breathing in Its Capital Is Hazardous"
+        >
+          <img
+            src="assets/articles/nyt.png"
+            alt="New York Times article screenshot about hazardous air in New Delhi"
+          />
+        </a>
+        <a
+          class="article-clip clip-bbc-cap"
+          href="https://www.nature.com/articles/s44407-024-00001-6"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read Nature npj Clean Air article about air pollution in New Delhi"
+        >
+          <img
+            src="assets/articles/npj.png"
+            alt="Article screenshot about air pollution in New Delhi"
+          />
+        </a>
+        <a
+          class="article-clip clip-geo"
+          href="https://geographical.co.uk/news/geo-explainer-why-is-delhi-one-of-the-most-polluted-cities-worldwide"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read Geographical explainer about why Delhi is one of the most polluted cities"
+        >
+          <img
+            src="assets/articles/geographical.png"
+            alt="Geographical article screenshot about why Delhi is heavily polluted"
+          />
+        </a>
+        <a
+          class="article-clip clip-nih"
+          href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6503731/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read National Library of Medicine article about the great smog of Delhi"
+        >
+          <img
+            src="assets/articles/NIH.png"
+            alt="PubMed Central article screenshot about the great smog of Delhi"
+          />
+        </a>
+        <a
+          class="article-clip clip-bbc-500"
+          href="https://www.bbc.com/news/articles/ced6jgg0180o"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read BBC article about why India caps pollution readings at 500"
+        >
+          <img
+            src="assets/articles/bbcc04v39dk053o.png"
+            alt="BBC article screenshot about India capping pollution readings at 500"
+          />
+        </a>
+      </div>
+      <div aria-hidden="true" class="bottom-haze"></div>
+      <div aria-hidden="true" class="grain"></div>
+    </section>
+    <section aria-label="Why farmers burn crop residue" class="farmer-window">
+      <div aria-hidden="true" class="smoke-top">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div aria-hidden="true" class="smoke-wisp"></div>
+      <div aria-hidden="true" class="crop-left">
+        <div class="stem"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+      </div>
+      <div aria-hidden="true" class="crop-right">
+        <div class="stem"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+      </div>
+      <div aria-hidden="true" class="hill"></div>
+      <main class="content">
+        <h1>A window that’s too small</h1>
+        <p class="lede">
+          After their rice harvest, farmers in Punjab and Haryana have only a
+          few weeks to prepare their fields and sow wheat. The gap leaves little
+          time — and for many farmers, little choice — to clear what is left
+          behind.
+        </p>
+        <p class="chart-title">
+          The time between rice harvest &amp; wheat sowing
+        </p>
+        <section
+          aria-label="Gauge showing the short 7 to 10 day window"
+          class="clock-row"
+        >
+          <aside class="days-note">
+            <div class="big">7–10</div>
+            <div class="label">DAYS</div>
+            <p>The narrow window farmers have to prepare for wheat.</p>
+          </aside>
+          <div aria-hidden="true" class="gauge">
+            <div class="arc"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="needle"></div>
+            <div class="hub"></div>
+            <div class="gauge-label zero">0<span>DAYS</span></div>
+            <div class="gauge-label thirty">30<span>DAYS</span></div>
+            <div class="gauge-label sixty">60<span>DAYS</span></div>
+          </div>
+        </section>
+      </main>
+      <div aria-hidden="true" class="grain"></div>
+    </section>
+    <section
+      aria-label="Transition from harvest pressure into fire counts"
+      class="fire-transition"
+    >
+      <div aria-hidden="true" class="background-scene">
+        <svg preserveaspectratio="none" viewbox="0 0 1440 1900">
+          <defs>
+            <lineargradient id="pageBg" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#d6a269"></stop>
+              <stop offset="0.48" stop-color="#d6a269"></stop>
+              <stop offset="0.78" stop-color="#c99155"></stop>
+              <stop offset="1" stop-color="#b77940"></stop>
+            </lineargradient>
+            <lineargradient id="flameFill" x1="0" x2="0" y1="1" y2="0">
+              <stop offset="0" stop-color="#b64832"></stop>
+              <stop offset="0.56" stop-color="#d85a37"></stop>
+              <stop offset="1" stop-color="#e07143"></stop>
+            </lineargradient>
+            <lineargradient id="flameShade" x1="0" x2="0" y1="1" y2="0">
+              <stop offset="0" stop-color="#7f2d25" stop-opacity="0.56"></stop>
+              <stop offset="1" stop-color="#8f342d" stop-opacity="0.1"></stop>
+            </lineargradient>
+          </defs>
+          <rect fill="url(#pageBg)" height="1900" width="1440"></rect>
+
+          <g opacity="0.95">
+            <path
+              d="M0 1900 L0 1340 C58 1260 35 1188 92 1118 C73 1260 160 1315 135 1438 C225 1300 190 1040 372 890 C325 1092 426 1185 396 1355 C490 1212 515 1028 662 910 C620 1118 725 1198 705 1382 C805 1230 810 1118 902 1048 C875 1198 980 1280 950 1435 C1040 1300 1045 1120 1198 958 C1160 1162 1292 1250 1260 1430 C1355 1308 1355 1132 1440 1015 L1440 1900 Z"
+              fill="url(#flameFill)"
+            ></path>
+            <path
+              d="M0 1900 L0 1535 C72 1438 65 1308 124 1235 C105 1372 205 1415 178 1588 C280 1490 280 1320 435 1258 C390 1408 505 1478 478 1648 C600 1530 592 1402 672 1325 C645 1468 748 1518 725 1695 C835 1560 815 1400 922 1290 C892 1455 1015 1510 985 1698 C1095 1578 1098 1445 1170 1360 C1150 1492 1240 1565 1225 1702 C1322 1580 1310 1430 1390 1342 C1375 1495 1440 1545 1440 1690 L1440 1900 Z"
+              fill="url(#flameShade)"
+              opacity="0.68"
+            ></path>
+            <path
+              d="M0 1900 L0 1690 C130 1575 218 1598 302 1490 C280 1642 402 1682 385 1812 C500 1702 585 1642 690 1515 C660 1680 790 1720 760 1845 C882 1742 975 1645 1085 1508 C1052 1674 1200 1708 1168 1842 C1295 1730 1350 1640 1440 1565 L1440 1900 Z"
+              fill="#8d342b"
+              opacity="0.38"
+            ></path>
+          </g>
+          <path
+            d="M0 1770 C118 1738 205 1785 320 1764 C448 1740 520 1788 662 1765 C785 1746 852 1788 975 1760 C1100 1732 1190 1768 1308 1755 C1365 1748 1402 1748 1440 1755 L1440 1900 L0 1900 Z"
+            fill="#2f302e"
+          ></path>
+        </svg>
+      </div>
+      <div class="stubble-photo-clips" aria-hidden="true">
+        <img
+          class="stubble-photo stubble-photo-left"
+          src="assets/stubble/stubble burning 1.jpg"
+          alt=""
+        />
+        <img
+          class="stubble-photo stubble-photo-right"
+          src="assets/stubble/stubble burning 3.png"
+          alt=""
+        />
+        <img
+          class="stubble-photo stubble-photo-low"
+          src="assets/stubble/stubble burning 4.jpg"
+          alt=""
+        />
+      </div>
+      <div class="sticky-card-wrap">
+        <article class="text-card">
+          <p>
+            Punjab and Haryana are regions of India north-west of Delhi. They
+            are among India’s largest producers of rice and wheat, feeding
+            millions across the country. But after rice is harvested in late
+            October, farmers have only a very small window — often just
+            <strong>7 to 10 days</strong> — to clear their fields before wheat
+            sowing begins in early November.
+          </p>
+          <p>
+            Clearing crop residue quickly manually takes time and money that
+            many farmers cannot afford. Missing the sowing window can reduce
+            yields dramatically, cutting into already thin profits. For many
+            farmers, burning the leftover stubble becomes the fastest and
+            cheapest way to prepare fields in time.
+          </p>
+        </article>
+      </div>
+      <div aria-hidden="true" class="grain"></div>
+    </section>
+    <section class="fire-scrolly" id="fire-scrolly">
+      <div class="scrolly-sticky">
+        <div class="map-wrap">
+          <svg
+            aria-label="Map of fire detections across Punjab, Haryana, and surrounding areas"
+            id="fire-map"
+          ></svg>
+          <div aria-hidden="true" class="smoke-screen-dim"></div>
+          <svg aria-hidden="true" id="wind-overlay"></svg>
+          <div class="date-badge">
+            <div class="date" id="fire-date">Loading…</div>
+            <div class="count" id="fire-count">Loading fire detections</div>
+          </div>
+          <div aria-hidden="true" class="legend">
+            <span><b class="dot new"></b> New fires</span>
+            <span><b class="dot week"></b> Recent fires</span>
+            <span><b class="dot old"></b> Older cumulative fires</span>
+          </div>
+        </div>
+      </div>
+      <div class="steps">
+        <section class="step" data-progress="0.08">
+          <article class="annotation">
+            <p>
+              At the beginning of the season, fire detections remain relatively
+              scattered across northern India. The MODIS satellite data captures
+              all thermal anomalies -- not every fire is confirmed crop burning
+              -- but large clusters have not yet formed across Punjab and
+              Haryana.
+            </p>
+            <p>
+              The region is entering the dry post-monsoon season, when harvested
+              fields begin clearing and vegetation moisture drops. Smoke exists,
+              but the landscape has not yet shifted into the concentrated burn
+              period tied to wheat preparation.
+            </p>
+          </article>
+        </section>
+        <section class="step" data-progress="0.36">
+          <article class="annotation">
+            <p>
+              As the rice harvest finishes and farmers rush to plant wheat,
+              fires begin appearing more frequently across Punjab and Haryana.
+            </p>
+            <p>
+              At the same time, northwesterly winds begin pushing smoke
+              southeast toward Delhi and the Indo-Gangetic Plain, carrying
+              pollution far beyond the fields where the fires originate.
+            </p>
+          </article>
+        </section>
+        <section class="step" data-progress="0.50">
+          <article class="annotation">
+            <p>The pattern becomes difficult to ignore.</p>
+            <p>
+              By this stage, daily detections can exceed 1,500 fires in a single
+              day. Distinct clusters now dominate parts of Punjab and Haryana,
+              aligning closely with the narrow window farmers face between rice
+              harvest and wheat sowing.
+            </p>
+          </article>
+        </section>
+        <section class="step" data-progress="0.58">
+          <article class="annotation">
+            <p>The burn season reaches its maximum intensity.</p>
+            <p>
+              Daily detections climb above 3,400 fires with more than 10,000
+              fires already recorded within the six days prior. The
+              concentration of activity across Punjab and Haryana becomes one of
+              the largest seasonal fire bursts visible in the region each year.
+            </p>
+          </article>
+        </section>
+        <section class="step smoke-route-step" data-progress="0.60">
+          <article class="annotation">
+            <p>
+              Smoke continues to follow wind routes into Delhi, blocked by the
+              Himalayas which form a barrier, preventing air from dissipating.
+            </p>
+          </article>
+        </section>
+        <section class="step" data-progress="0.90">
+          <article class="annotation">
+            <p>
+              After the sowing window passes, the fire counts begin falling
+              almost as quickly as they rose.
+            </p>
+            <p>
+              The MODIS dataset still captures many kinds of fires across
+              northern India, but the intense concentration visible during the
+              peak period rapidly weakens. What remains is a clear seasonal
+              pattern: a short, explosive burst of fire activity that appears
+              irregular compared to surrounding weeks and repeats during the
+              post-harvest transition into winter.
+            </p>
+          </article>
+        </section>
+      </div>
+    </section>
+
+    <section
+      aria-label="Daily fire counts across burning seasons"
+      class="fire-counts-section"
+      id="fire-counts-section"
+    >
+      <div class="fire-counts-layout">
+        <div class="fire-counts-chart-wrap">
+          <p class="chart-kicker">Active fire counts (VIIRS via FIRMS)</p>
+          <p class="chart-subtitle">Daily fire detections, Oct 1-Nov 30</p>
+          <svg
+            aria-label="Daily fire counts during October and November, 2020 through 2024"
+            id="fire-counts-chart"
+          ></svg>
+        </div>
+        <aside class="fire-counts-callout">
+          <p class="callout-label">Peak window</p>
+          <div class="callout-number" id="fire-window-percent">Loading</div>
+          <p id="fire-window-copy">
+            Calculating the strongest 10-day fire window from 2020-2024.
+          </p>
+        </aside>
+      </div>
+      <p class="fire-to-delhi-bridge">
+        When the burn window tightens, the smoke does not stay in the fields.
+        Downwind, Delhi breathes the season as exposure.
+      </p>
+    </section>
+
+    <section
+      aria-label="Delhi air quality by month"
+      class="aqi-dashboard-section"
+      id="aqi-dashboard-section"
+    >
+      <article class="aqi-dashboard-intro">
+        <p class="kicker">What Delhi breathes</p>
+        <h1>Explore the season as sensor data.</h1>
+        <div class="body-copy">
+          <p>
+            Hourly readings from Delhi sensors, rolled into monthly air quality
+            bands. Select a year, click a month to drill into daily pollution and
+            pollutants — then draw what you expect for the same month in
+            <strong>2026</strong> and reveal what the sensors show.
+          </p>
+        </div>
+        <p id="aqi-load-status" class="aqi-load-status">Loading sensor data…</p>
+      </article>
+      <div id="aqi-dashboard" data-aqi-embed="true">
+        <div id="loader" class="loader hidden">
     <div class="loader-inner">
       <p class="loader-label">LOADING DELHI SENSOR DATA</p>
       <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
     </div>
   </div>
-
-  <div id="app" class="app hidden">
+        <div id="app" class="app hidden">
     <!-- ═══ HOME: radial calendar ═══ -->
     <section id="view-home" class="view view-active">
       <header class="hero">
@@ -171,10 +618,463 @@
       </section>
     </section>
   </div>
+      </div>
+    </section>
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="js/cloud-tunnel.js?v=data-load-fix-v7"></script>
-  <script src="js/bins.js?v=data-load-fix-v7"></script>
-  <script src="js/app.js?v=data-load-fix-v7"></script>
-</body>
+    <section
+      aria-label="What reaches Delhi"
+      class="delhi-effects-draft story-section"
+      id="what-reaches-delhi"
+    >
+      <article class="effects-text-panel">
+        <p class="kicker">What reaches Delhi?</p>
+        <h1>The smoke does not stop at the farms where it begins.</h1>
+        <div class="body-copy">
+          <p>
+            During the post-monsoon season, northwesterly winds carry pollution
+            from Punjab and Haryana toward Delhi, where it mixes with emissions
+            already trapped within the city: traffic, construction dust, coal
+            power, industry, and waste burning.
+          </p>
+          <p>
+            By the time the smoke arrives, Delhi's air is often already
+            polluted. Seasonal burning does not create the crisis alone -- it
+            intensifies one that already exists.
+          </p>
+          <p class="visual-placeholder">
+            Animated wind visualization: smoke drifts southeast from Punjab and
+            Haryana toward Delhi over several days, transitioning from isolated
+            plumes into a regional haze layer over the Indo-Gangetic Plain.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section
+      aria-label="PM2.5 comparison between the United States and Delhi"
+      class="pm25-scrolly"
+      id="pm25-comparison"
+    >
+      <div class="pm25-sticky">
+        <article class="pm25-copy" aria-live="polite">
+          <h1 id="pm25-copy-title">
+            PM2.5 is microscopic air pollution—about 30 times smaller than a
+            human hair—that can travel deep into your lungs and even enter your
+            bloodstream when you breathe.
+          </h1>
+          <p id="pm25-copy-body">
+            The U.S. average concentration is 8.2 micrograms of these particles
+            per cubic meter (8.2 µg/m³).
+          </p>
+        </article>
+        <div class="pm25-stage">
+          <svg
+            aria-label="Animated PM2.5 particle comparison between the United States and Delhi"
+            id="pm25-scrolly-viz"
+          ></svg>
+          <p class="pm25-source-note">
+            Values shown in micrograms per cubic meter. Sources: WHO, EPA AQI,
+            IQAir, Delhi PM2.5 dataset summary.
+          </p>
+        </div>
+      </div>
+      <div class="pm25-scroll-steps" aria-hidden="true">
+        <div class="pm25-step"></div>
+        <div class="pm25-step"></div>
+        <div class="pm25-step"></div>
+        <div class="pm25-step"></div>
+      </div>
+    </section>
+
+    <section
+      aria-label="Cigarette equivalent interactive"
+      class="cigarette-interactive"
+      id="cigarette-interactive"
+    >
+      <div aria-hidden="true" class="cig-smoke-top"></div>
+      <div class="cig-layout">
+        <article class="cig-copy">
+          <p class="kicker">
+            In 2017
+            <a
+              class="source-link"
+              href="https://edition.cnn.com/2017/11/10/health/delhi-pollution-equivalent-cigarettes-a-day"
+              target="_blank"
+              rel="noopener"
+              >CNN</a
+            >
+          </p>
+          <h1>
+            Daily exposure to pollution in Delhi during peak season was
+            equivalent to
+          </h1>
+          <div class="sentence-guess">
+            <label class="guess-label" for="guess-input">Your estimate</label>
+            <div class="guess-input-row">
+              <input
+                aria-label="Estimated cigarettes per day"
+                id="guess-input"
+                inputmode="numeric"
+                max="100"
+                min="0"
+                step="1"
+                type="number"
+                value="25"
+              />
+              <div class="guess-buttons" aria-label="Adjust guess">
+                <button
+                  aria-label="Increase guess"
+                  class="guess-step"
+                  data-delta="1"
+                  type="button"
+                >
+                  ^
+                </button>
+                <button
+                  aria-label="Decrease guess"
+                  class="guess-step"
+                  data-delta="-1"
+                  type="button"
+                >
+                  v
+                </button>
+              </div>
+              <span>cigarettes/day</span>
+            </div>
+          </div>
+          <button class="guess-confirm" id="guess-confirm" type="button">
+            Confirm my guess
+          </button>
+          <div aria-hidden="true" class="cigarette-illustration">
+            <svg viewBox="0 0 420 360" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="filterShade" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#f0b45f"></stop>
+                  <stop offset="0.45" stop-color="#d99035"></stop>
+                  <stop offset="1" stop-color="#b96c21"></stop>
+                </linearGradient>
+                <linearGradient id="paperShade" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#fff9ed"></stop>
+                  <stop offset="0.5" stop-color="#efe7d8"></stop>
+                  <stop offset="1" stop-color="#d7cbb8"></stop>
+                </linearGradient>
+                <linearGradient id="ashShade" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0" stop-color="#161616"></stop>
+                  <stop offset="0.45" stop-color="#080808"></stop>
+                  <stop offset="1" stop-color="#000000"></stop>
+                </linearGradient>
+                <radialGradient id="emberGlow" cx="50%" cy="50%" r="58%">
+                  <stop offset="0" stop-color="#111111"></stop>
+                  <stop offset="0.5" stop-color="#050505"></stop>
+                  <stop offset="1" stop-color="#000000"></stop>
+                </radialGradient>
+                <filter id="softShadow" x="-20%" y="-30%" width="140%" height="170%">
+                  <feDropShadow
+                    dx="0"
+                    dy="18"
+                    flood-color="#5f3a1d"
+                    flood-opacity="0.22"
+                    stdDeviation="10"
+                  ></feDropShadow>
+                </filter>
+              </defs>
+              <ellipse
+                cx="145"
+                cy="315"
+                fill="#6f441f"
+                opacity="0.18"
+                rx="98"
+                ry="13"
+              ></ellipse>
+              <path
+                d="M336 70 C319 36 360 31 342 0"
+                fill="none"
+                opacity="0.35"
+                stroke="#7b7469"
+                stroke-linecap="round"
+                stroke-width="4"
+              ></path>
+              <path
+                d="M358 83 C340 47 382 36 363 5"
+                fill="none"
+                opacity="0.28"
+                stroke="#7b7469"
+                stroke-linecap="round"
+                stroke-width="4"
+              ></path>
+              <path
+                d="M316 80 C303 53 331 43 319 18"
+                fill="none"
+                opacity="0.24"
+                stroke="#7b7469"
+                stroke-linecap="round"
+                stroke-width="3"
+              ></path>
+              <g filter="url(#softShadow)" transform="rotate(-38 196 209)">
+                <rect
+                  fill="url(#filterShade)"
+                  height="58"
+                  rx="18"
+                  width="122"
+                  x="42"
+                  y="180"
+                ></rect>
+                <rect
+                  fill="url(#paperShade)"
+                  height="58"
+                  width="188"
+                  x="148"
+                  y="180"
+                ></rect>
+                <rect
+                  fill="#f6efe3"
+                  height="58"
+                  opacity="0.32"
+                  width="22"
+                  x="166"
+                  y="180"
+                ></rect>
+                <rect
+                  fill="#caa36d"
+                  height="58"
+                  opacity="0.48"
+                  width="20"
+                  x="326"
+                  y="180"
+                ></rect>
+                <ellipse
+                  cx="346"
+                  cy="209"
+                  fill="url(#ashShade)"
+                  rx="21"
+                  ry="29"
+                ></ellipse>
+                <path
+                  d="M332 190 C342 199 351 190 362 201 C353 202 355 211 364 216 C352 220 342 216 335 225 C334 214 323 207 332 190Z"
+                  fill="url(#emberGlow)"
+                ></path>
+                <path
+                  d="M339 188 C348 194 353 189 361 197 M334 203 C344 206 351 205 360 212 M333 220 C343 216 353 220 361 216"
+                  fill="none"
+                  opacity="0.65"
+                  stroke="#272421"
+                  stroke-linecap="round"
+                  stroke-width="5"
+                ></path>
+                <g opacity="0.28" stroke-linecap="round">
+                  <path d="M60 193 l7 -3" stroke="#ffd48a" stroke-width="2"></path>
+                  <path d="M79 221 l5 -4" stroke="#ffd48a" stroke-width="2"></path>
+                  <path d="M101 198 l4 3" stroke="#8c541d" stroke-width="2"></path>
+                  <path d="M127 225 l7 -2" stroke="#ffd48a" stroke-width="2"></path>
+                  <path d="M84 205 l3 3" stroke="#8c541d" stroke-width="2"></path>
+                  <path d="M117 190 l5 2" stroke="#ffd48a" stroke-width="2"></path>
+                </g>
+                <g opacity="0.18" stroke="#b7aa98" stroke-width="1.3">
+                  <path d="M176 184 C170 199 171 215 178 235"></path>
+                  <path d="M201 183 C194 201 196 221 205 236"></path>
+                  <path d="M230 183 C224 200 225 219 233 236"></path>
+                  <path d="M260 183 C252 203 257 221 264 236"></path>
+                  <path d="M292 183 C284 200 287 221 294 236"></path>
+                </g>
+              </g>
+            </svg>
+          </div>
+        </article>
+        <aside class="cig-reveal">
+          <div class="live-guess" id="live-guess">
+            <div class="cig-grid live-grid" id="guess-cig-grid"></div>
+          </div>
+          <div class="after-guess" id="after-guess" hidden>
+            <p class="reveal-label">The real amount is</p>
+            <div class="real-number">44</div>
+            <p class="real-unit">cigarettes/day</p>
+            <div class="cig-grid" id="cig-grid"></div>
+            <div class="histogram-wrap">
+              <p class="hist-title">What others guessed</p>
+              <canvas height="150" id="guess-histogram"></canvas>
+            </div>
+            <p class="guess-comment" id="guess-comment"></p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section
+      aria-label="Future Delhi skyline comparison"
+      class="delhi-effects-draft story-section visual-only-section"
+      id="delhi-skyline-placeholder"
+    >
+      <article class="effects-text-panel">
+        <div class="body-copy">
+          <p class="visual-placeholder">
+            Skyline/photo comparison slider: clear skyline on one side, severe
+            smog day on the other, showing the horizon disappearing as haze
+            thickens.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section
+      aria-label="Why winter makes Delhi pollution worse"
+      class="delhi-effects-draft story-section"
+      id="why-winter-makes-it-worse"
+    >
+      <article class="effects-text-panel">
+        <p class="kicker">Why winter makes it worse</p>
+        <h1>Winter turns Delhi into a basin for trapped air.</h1>
+        <div class="body-copy">
+          <p>
+            During colder months, cool dense air settles near the ground while
+            warmer air forms a layer above it -- a phenomenon known as
+            temperature inversion. Instead of rising and dispersing, pollutants
+            become trapped close to breathing height.
+          </p>
+          <p>
+            Fog makes the problem even worse. Moist winter air combines with
+            pollutants to create dense smog capable of covering entire sections
+            of the city for days.
+          </p>
+          <p>
+            Delhi's geography compounds the effect. The city sits within the
+            Indo-Gangetic Plain, with the Himalayas to the north acting as a
+            partial barrier that limits air circulation and slows dispersal.
+          </p>
+          <p class="visual-placeholder">
+            Atmospheric cross-section visualization: cold air trapped below, a
+            warm inversion layer above, smoke compressed near the ground, and
+            the Himalayas in the background limiting circulation.
+          </p>
+          <p class="visual-placeholder">
+            Seasonal comparison graphic: summer versus winter, comparing
+            stronger winds, weaker winds, PM2.5 differences, and a 59% higher
+            winter pollution callout.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section
+      aria-label="Multiple sources of Delhi pollution"
+      class="delhi-effects-draft story-section"
+      id="more-than-one-source"
+    >
+      <article class="effects-text-panel">
+        <p class="kicker">The smoke is only part of it</p>
+        <h1>
+          Stubble burning is one contributor to Delhi's pollution crisis, but
+          not the only one.
+        </h1>
+        <div class="body-copy">
+          <p>
+            An estimated 1.1 million vehicles enter and leave Delhi every day.
+            Coal power plants surrounding the city release sulphur dioxide,
+            nitrogen oxides, and soot into the atmosphere. Construction dust,
+            industrial emissions, and landfill fires all add to the pollution
+            already hanging over the region.
+          </p>
+          <p>
+            During winter, these sources combine together beneath the same
+            stagnant air.
+          </p>
+          <p class="visual-placeholder">
+            Layered emissions visualization: vehicles, coal plants, construction
+            dust, landfill fires, and agricultural smoke all feeding into the
+            same haze layer over Delhi.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section
+      aria-label="Delhi winter pollution closing"
+      class="delhi-effects-draft story-section closing-section"
+      id="winter-visible-close"
+    >
+      <article class="effects-text-panel">
+        <h1>During winter, the numbers become visible.</h1>
+        <div class="body-copy">
+          <p>
+            For much of the year, Delhi's pollution exists as statistics: PM2.5
+            readings, satellite detections, mortality estimates, air quality
+            indexes.
+          </p>
+          <p>
+            But during winter, the numbers become visible. Horizons disappear
+            into haze. Schools close. Flights are delayed. Masks return to
+            crowded streets. More than thirty million people continue daily life
+            beneath air that health experts routinely classify as unsafe to
+            breathe.
+          </p>
+          <p>
+            What begins as smoke over harvested fields hundreds of kilometers
+            away eventually settles into the atmosphere of an entire city.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section
+      aria-label="Effects of seasonal smoke on Delhi air"
+      class="delhi-effects-draft"
+      id="delhi-effects-draft"
+    >
+      <div aria-hidden="true" class="effects-haze-stage">
+        <div class="effects-skyline">
+          <div class="effects-layer back"></div>
+          <div class="effects-layer front"></div>
+        </div>
+        <div class="effects-smog"></div>
+      </div>
+      <article class="effects-text-panel">
+        <h1>Writeup</h1>
+        <div class="body-copy">
+          <p>1. What have you done so far?</p>
+          <p>
+            So far, we have spent time designing our webpage in Figma, primarily
+            based on articles by <em>The Pudding</em>, implementing many of our
+            early ideas such as scrollytelling through the fires and our intro
+            smoke screen section. We plan to revisit the text to create a more
+            cohesive article and develop more of the second half of the article
+            soon, focusing more on our Delhi air quality dataset and mentioning
+            the reprecussions of the aforementioned fires. Our work so far
+            reflects the first parts of our story -- the what, the why, and the
+            how. We explain a basic idea of the issue, reasons for it's
+            existence, and how it gets trapped in Delhi. We wish to visit more
+            of the effects and the consequences before finishing our submission
+          </p>
+          <p>
+            2. What will be the most challenging of your project to design and
+            why?
+          </p>
+          <p>
+            The most challenging part of our project to design will be our main
+            interactive visualization on the Delhi air quality dataset. We are
+            still brainstorming this visualization and how we can effectively
+            show information in a way that cannot be conveyed in simple static
+            plots. One of the biggest difficulties is balancing visual clarity
+            with the large amount of environmental data we want to include.
+            Currently, we are drafting and brainstorming multiple ideas before
+            we come to our conclusion on what we wish to move forward with and
+            how we can design it to reflect the principles we learned in this
+            class.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <script>
+      (function () {
+        window.__delhiDataPromise = fetch("data/delhi_aqi.json?v=embed-v1", {
+          cache: "no-store",
+        }).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        });
+      })();
+    </script>
+    <script src="js/bins.js?v=embed-v1"></script>
+    <script src="js/aqi-dashboard.js?v=embed-v1"></script>
+    <script src="app.js"></script>
+  </body>
 </html>

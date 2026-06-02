@@ -8,3 +8,6 @@ docs/.DS_Store
 
 # Large raw sensor export (rebuild JSON locally with scripts/build_aqi_data.py)
 Delhi Air Quality Time Series Dataset*.csv
+
+# Local clone of upstream narrative (integrated into root)
+delhi-air-source/
