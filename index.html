@@ -127,17 +127,30 @@
 
       <section class="predict-section" id="predict-section">
         <div class="predict-header">
-          <h2>Model forecast: <span id="predict-month-label">Nov 2026</span></h2>
+          <h2>Predict <span id="predict-month-label">Nov 2026</span></h2>
           <p>
-            A <strong>linear trend model</strong> trained on monthly mean AQI from 2020–2023
-            extrapolates to <strong>2026</strong>. Dotted line = the month you selected; solid line = model prediction.
+            <strong>Dotted</strong> = the month you selected · <strong>solid grey</strong> = model forecast ·
+            <strong>draw your own</strong> daily AQI curve for 2026, then compare with the model.
           </p>
         </div>
 
         <div class="predict-card">
           <div id="model-stats" class="model-stats"></div>
+          <div class="predict-toolbar">
+            <button type="button" id="btn-clear-draw" class="btn-ghost">Clear drawing</button>
+            <span class="draw-hint">Click and drag on the chart to draw your 2026 prediction</span>
+          </div>
           <div class="predict-canvas-wrap" id="predict-wrap">
             <svg id="predict-grid" class="predict-svg"></svg>
+            <canvas id="predict-canvas"></canvas>
+          </div>
+          <div class="predict-actions">
+            <button type="button" id="btn-finish" class="btn-primary">Finish & compare with model</button>
+            <button type="button" id="btn-draw-again" class="btn-ghost hidden">Draw again</button>
+          </div>
+          <div id="compare-panel" class="compare-panel hidden">
+            <h3>Your prediction vs model</h3>
+            <p id="compare-note" class="compare-note"></p>
           </div>
         </div>
       </section>

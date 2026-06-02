@@ -13,6 +13,10 @@
     year: 2020,
     selectedMonth: null,
     playTimer: null,
+    drawPoints: [],
+    isDrawing: false,
+    predictLocked: false,
+    predictScales: null,
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -190,6 +194,12 @@
     $("#detail-badge").textContent = `Delhi · ${year}`;
     $("#detail-sub").textContent = `Mean AQI ${rec.aqi} (${labelForBin(rec.bin)}) · ${rec.readings.toLocaleString()} hourly readings`;
     $("#predict-month-label").textContent = `${mName} ${fcYear}`;
+
+    state.drawPoints = [];
+    state.predictLocked = false;
+    $("#compare-panel")?.classList.add("hidden");
+    $("#btn-draw-again")?.classList.add("hidden");
+    $("#btn-finish").disabled = false;
 
     renderDetailCharts(year, month);
     setupForecastChart(year, month);
@@ -483,7 +493,64 @@
       .attr("text-anchor", "middle")
       .attr("fill", "rgba(180,170,210,0.9)")
       .attr("font-size", 9)
-      .text("linear trend forecast");
+      .text("model forecast");
+  }
+
+  function meanAqiFromDraw(points) {
+    if (!points.length) return null;
+    return Math.round((points.reduce((s, p) => s + p.aqi, 0) / points.length) * 10) / 10;
+  }
+
+  function redrawUserDraw(ctx, x, y) {
+    const pts = state.drawPoints;
+    if (!ctx || pts.length < 2) return;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.beginPath();
+    ctx.strokeStyle = "#f0f2f5";
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    pts.forEach((p, i) => {
+      const sx = x(p.day);
+      const sy = y(p.aqi);
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    });
+    ctx.stroke();
+  }
+
+  function finishCompare(viewMonth, fc) {
+    const mName = MONTHS[viewMonth - 1];
+    const fcYear = fc?.year ?? DATA?.forecastYear ?? 2026;
+    const panel = $("#compare-panel");
+    const note = $("#compare-note");
+
+    if (state.drawPoints.length < 2) {
+      note.textContent = "Draw a line on the chart first — click and drag across the days of the month.";
+      panel.classList.remove("hidden");
+      return;
+    }
+
+    const userMean = meanAqiFromDraw(state.drawPoints);
+    const modelMean = fc?.monthlyAqi ?? null;
+
+    state.predictLocked = true;
+    $("#btn-finish").disabled = true;
+    $("#btn-draw-again").classList.remove("hidden");
+    $("#predict-canvas")?.classList.add("is-locked");
+
+    let html = `Your drawn <strong>${mName} ${fcYear}</strong> mean AQI: <strong>${userMean}</strong>`;
+    if (modelMean != null) {
+      const diff = Math.round((userMean - modelMean) * 10) / 10;
+      const dir = diff > 0 ? "higher" : diff < 0 ? "lower" : "the same as";
+      const diffAbs = Math.abs(diff);
+      html += `. Model forecast: <strong>${modelMean}</strong> — your line is <strong>${diffAbs || "exactly"}</strong> AQI points ${dir === "the same as" ? "the same as" : dir} the model.`;
+    } else {
+      html += ". No model forecast available for this month.";
+    }
+    note.innerHTML = html;
+    panel.classList.remove("hidden");
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function renderModelStats(viewMonth, fc) {
@@ -507,14 +574,17 @@
     `;
   }
 
-  /* ─── 2026 model forecast chart ─── */
+  /* ─── 2026 forecast chart + draw your prediction ─── */
   function setupForecastChart(viewYear, viewMonth) {
     const wrap = $("#predict-wrap");
+    const canvas = $("#predict-canvas");
     const svg = d3.select("#predict-grid");
     svg.selectAll("*").remove();
 
     const W = wrap.clientWidth;
     const H = wrap.clientHeight;
+    canvas.width = W;
+    canvas.height = H;
     const margin = { top: 28, right: 24, bottom: 40, left: 48 };
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
@@ -540,6 +610,8 @@
 
     const x = d3.scaleLinear().domain([1, maxDay]).range([margin.left, margin.left + w]);
     const y = d3.scaleLinear().domain([0, yMax]).nice().range([margin.top + h, margin.top]);
+
+    state.predictScales = { x, y, maxDay, yMax, margin, W, H, viewYear, viewMonth, fc };
 
     const g = svg.attr("width", W).attr("height", H).append("g");
 
@@ -584,6 +656,65 @@
         .attr("d", line);
       addForecastLineLabel(g, x, y, viewMonth, fc, margin, w);
     }
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+    if (state.drawPoints.length >= 2) redrawUserDraw(ctx, x, y);
+
+    function canvasPoint(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const px = ((evt.clientX - rect.left) / rect.width) * W;
+      const py = ((evt.clientY - rect.top) / rect.height) * H;
+      const day = x.invert(px);
+      const aqi = y.invert(py);
+      return {
+        day: Math.max(1, Math.min(maxDay, day)),
+        aqi: Math.max(0, Math.min(yMax, aqi)),
+      };
+    }
+
+    canvas.onmousedown = (e) => {
+      if (state.predictLocked) return;
+      state.isDrawing = true;
+      state.drawPoints = [canvasPoint(e)];
+      redrawUserDraw(ctx, x, y);
+    };
+    canvas.onmousemove = (e) => {
+      if (!state.isDrawing || state.predictLocked) return;
+      state.drawPoints.push(canvasPoint(e));
+      redrawUserDraw(ctx, x, y);
+    };
+    canvas.onmouseup = () => { state.isDrawing = false; };
+    canvas.onmouseleave = () => { state.isDrawing = false; };
+
+    canvas.ontouchstart = (e) => {
+      e.preventDefault();
+      canvas.onmousedown(e.touches[0]);
+    };
+    canvas.ontouchmove = (e) => {
+      e.preventDefault();
+      canvas.onmousemove(e.touches[0]);
+    };
+    canvas.ontouchend = () => canvas.onmouseup();
+
+    $("#btn-clear-draw").onclick = () => {
+      if (state.predictLocked) return;
+      state.drawPoints = [];
+      ctx.clearRect(0, 0, W, H);
+      $("#compare-panel")?.classList.add("hidden");
+    };
+
+    $("#btn-finish").onclick = () => finishCompare(viewMonth, fc);
+
+    $("#btn-draw-again").onclick = () => {
+      state.predictLocked = false;
+      state.drawPoints = [];
+      ctx.clearRect(0, 0, W, H);
+      canvas.classList.remove("is-locked");
+      $("#btn-finish").disabled = false;
+      $("#btn-draw-again").classList.add("hidden");
+      $("#compare-panel")?.classList.add("hidden");
+    };
   }
 
   /* ─── Year slider / play ─── */

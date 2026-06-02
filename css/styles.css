@@ -643,7 +643,37 @@ body.tunnel-locked {
   margin-bottom: 1rem;
 }
 
-.draw-hint { font-size: 0.8rem; color: var(--muted); }
+.draw-hint { font-size: 0.8rem; color: var(--muted-on-dark); }
+
+.compare-panel {
+  margin-top: 1.5rem;
+  padding: 1rem 1.15rem;
+  background: rgba(80, 85, 90, 0.25);
+  border: 1px solid rgba(180, 188, 198, 0.2);
+  border-radius: 8px;
+  animation: fade-in 0.5s ease;
+}
+
+.compare-panel h3 {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.compare-note {
+  font-size: 0.9rem;
+  color: var(--muted-on-dark);
+  line-height: 1.6;
+}
+
+.compare-note strong { color: var(--text-on-dark); }
+
+#predict-canvas.is-locked {
+  cursor: default;
+  opacity: 0.85;
+}
 
 .predict-canvas-wrap {
   position: relative;
