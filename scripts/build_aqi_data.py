@@ -154,7 +154,8 @@ def build_series(df: pd.DataFrame) -> tuple[dict, dict, dict, list[int]]:
                 })
             hourly[str(year)][str(month)] = []
             for i, (_, row) in enumerate(mdf.sort_values("ts").iterrows()):
-                if i % 3 != 0:
+                # Sparse hourly points keep JSON small enough to load reliably
+                if i % 12 != 0:
                     continue
                 hourly[str(year)][str(month)].append({
                     "t": row["ts"].strftime("%Y-%m-%d %H:%M"),

@@ -24,7 +24,16 @@
   const viewDetail = $("#view-detail");
 
   function dataJsonUrl() {
-    return new URL("data/delhi_aqi.json", window.location.href).href;
+    const v = document.body?.dataset?.build || Date.now();
+    return new URL(`data/delhi_aqi.json?v=${encodeURIComponent(v)}`, window.location.href).href;
+  }
+
+  function fetchJsonWithTimeout(url, ms = 45000) {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { cache: "no-store", signal: ctrl.signal }).finally(() =>
+      window.clearTimeout(timer)
+    );
   }
 
   function setLoadStatus(message, isError) {
@@ -42,11 +51,15 @@
     setLoadStatus("Loading sensor data…", false);
 
     try {
-      const res = await fetch(dataJsonUrl(), { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error(`Could not load data (${res.status}). Use a local server from delhi-dashboard/.`);
+      if (window.__delhiDataPromise) {
+        DATA = await window.__delhiDataPromise;
+      } else {
+        const res = await fetchJsonWithTimeout(dataJsonUrl());
+        if (!res.ok) {
+          throw new Error(`Could not load data (${res.status}). Use a local server from delhi-dashboard/.`);
+        }
+        DATA = await res.json();
       }
-      DATA = await res.json();
       if (!DATA?.monthly || !DATA?.years?.length) {
         throw new Error("Data file is empty or invalid.");
       }
@@ -69,6 +82,10 @@
       }
     } catch (err) {
       console.error(err);
+      const msg =
+        err.name === "AbortError"
+          ? "Data took too long to load. Refresh the page or use a faster connection."
+          : err.message || "Failed to load data.";
       if (loader) {
         loader.classList.remove("hidden");
         loader.innerHTML =
@@ -76,7 +93,7 @@
           "Failed to load data. Run: <code>cd delhi-dashboard && python3 -m http.server 8080</code> " +
           "then open http://localhost:8080</p>";
       }
-      setLoadStatus(err.message || "Failed to load data.", true);
+      setLoadStatus(msg, true);
       document.body.classList.remove("tunnel-locked");
       if (window.CloudTunnel?.signalDataError) {
         window.CloudTunnel.signalDataError("Data failed to load — see message below.");

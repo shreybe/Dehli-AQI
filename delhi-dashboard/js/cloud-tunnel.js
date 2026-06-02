@@ -86,8 +86,9 @@
     signalDataReady() {
       dataReady = true;
       if (enterBtn) enterBtn.classList.remove("hidden");
-      if (hint) hint.textContent = "Data ready — scroll through or tap Enter dashboard";
-      if (progress >= 1) emerge();
+      if (hint) hint.textContent = "Data ready — entering dashboard…";
+      // Auto-enter so users are not stuck if they scrolled before data finished
+      window.setTimeout(() => emerge(), 500);
     },
     signalDataError(message) {
       dataReady = false;
