@@ -24,6 +24,34 @@
   const viewHome = $("#view-home");
   const viewDetail = $("#view-detail");
 
+  function chartContainerWidth(node) {
+    if (!node) return 640;
+    const direct = node.clientWidth;
+    if (direct > 20) return direct;
+    const card = node.closest?.(".chart-card") || node.closest?.(".predict-card");
+    const fromCard = card?.clientWidth ? card.clientWidth - 40 : 0;
+    if (fromCard > 20) return fromCard;
+    const host = document.getElementById("aqi-dashboard");
+    const fromHost = host?.clientWidth ? host.clientWidth - 64 : 0;
+    if (fromHost > 20) return fromHost;
+    return Math.min(window.innerWidth - 48, 720);
+  }
+
+  function afterLayout(fn) {
+    requestAnimationFrame(() => requestAnimationFrame(fn));
+  }
+
+  function scrollToDetail() {
+    if (EMBED) {
+      (viewDetail?.querySelector(".detail-nav") || viewDetail)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   function dataJsonUrl() {
     const v = document.body?.dataset?.build || Date.now();
     return new URL(`data/delhi_aqi.json?v=${encodeURIComponent(v)}`, window.location.href).href;
@@ -263,6 +291,7 @@
 
     viewHome.classList.remove("view-active");
     viewDetail.classList.add("view-active");
+    $("#app")?.classList.add("is-detail");
 
     $("#detail-title").textContent = `${mName} ${year}`;
     $("#detail-badge").textContent = `Delhi · ${year}`;
@@ -281,15 +310,24 @@
     $("#reveal-panel")?.classList.add("hidden");
     $("#btn-finish").disabled = false;
 
-    renderDetailCharts(year, month);
-    setupPredictChart(year, month);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    afterLayout(() => {
+      renderDetailCharts(year, month);
+      setupPredictChart(year, month);
+      scrollToDetail();
+    });
   }
 
   function closeDetail() {
     viewDetail.classList.remove("view-active");
     viewHome.classList.add("view-active");
+    $("#app")?.classList.remove("is-detail");
     state.selectedMonth = null;
+    if (EMBED) {
+      document.getElementById("aqi-dashboard-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   }
 
   function chartMargins() {
@@ -309,7 +347,7 @@
     const el = d3.select(selector);
     el.selectAll("*").remove();
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 240;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
@@ -373,7 +411,7 @@
     const el = d3.select(selector);
     el.selectAll("*").remove();
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 280;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
@@ -436,7 +474,7 @@
     }
 
     const margin = chartMargins();
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 200;
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
@@ -577,7 +615,7 @@
     const el = d3.select("#chart-reveal");
     el.selectAll("*").remove();
 
-    const W = el.node().clientWidth || 800;
+    const W = chartContainerWidth(el.node());
     const H = 220;
     const mg = chartMargins();
     const iw = W - mg.left - mg.right;
@@ -616,7 +654,7 @@
 
     g.append("path").datum(series).attr("class", "line-actual").attr("d", line);
 
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    panel.scrollIntoView({ behavior: "smooth", block: EMBED ? "nearest" : "start" });
   }
 
   /* ─── Draw 2026 prediction (2023-style) ─── */
@@ -626,7 +664,7 @@
     const svg = d3.select("#predict-grid");
     svg.selectAll("*").remove();
 
-    const W = wrap.clientWidth;
+    const W = chartContainerWidth(wrap);
     const H = wrap.clientHeight;
     canvas.width = W;
     canvas.height = H;
