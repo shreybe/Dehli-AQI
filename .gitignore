@@ -11,3 +11,14 @@ Delhi Air Quality Time Series Dataset*.csv
 
 # Local clone of upstream narrative (integrated into root)
 delhi-air-source/
+
+# Large narrative / fire datasets (not needed for GitHub Pages deploy)
+data/raw/
+data/processed/fire_points*.csv
+data/processed/delhi_pm25_daily.csv
+data/processed/merged_fire_pm25_daily*.csv
+data/processed/daily_fire_counts_by_state*.csv
+data/processed/daily_fire_counts_wide*.csv
+delhi_aqi.json
+cloud-tunnel.js
+NEW-DELHI-Best-Places*.jpg
