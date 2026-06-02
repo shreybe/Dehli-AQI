@@ -1,5 +1,4 @@
-# Deploy website/ to GitHub Pages on every push to main
-name: Deploy GitHub Pages
+name: Deploy Delhi AQI Dashboard
 
 on:
   push:
@@ -22,17 +21,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
+          path: delhi-dashboard
+      - id: deployment
         uses: actions/deploy-pages@v4

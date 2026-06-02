@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delhi AQI · The Smoke That Stays</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="loader" class="loader">
+    <div class="loader-inner">
+      <p class="loader-label">LOADING DELHI SENSOR DATA</p>
+      <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <!-- ═══ HOME: radial calendar ═══ -->
+    <section id="view-home" class="view view-active">
+      <header class="hero">
+        <p class="eyebrow">Delhi · Hourly sensors · 2020–2023</p>
+        <h1 class="title">The Smoke <em>That Stays</em></h1>
+        <p class="subtitle">
+          Mean monthly AQI in discrete health bands. Select a year, then click a month to drill down —
+          explore pollutants, then draw your prediction for 2023.
+        </p>
+      </header>
+
+      <div class="dashboard-grid">
+        <div class="panel panel-radial">
+          <div class="panel-head">
+            <h2>Monthly AQI calendar</h2>
+            <p class="panel-hint">Click a colored month to explore · Oct–Nov = stubble season</p>
+          </div>
+          <div class="radial-wrap">
+            <svg id="radial-chart" role="img" aria-label="Monthly AQI radial chart"></svg>
+            <div class="radial-center-label" id="radial-center">2020</div>
+          </div>
+        </div>
+
+        <aside class="panel panel-side">
+          <div class="year-control">
+            <label for="year-slider">Year</label>
+            <input type="range" id="year-slider" min="2020" max="2023" value="2020" step="1" />
+            <div class="year-meta">
+              <span id="year-display" class="year-big">2020</span>
+              <button type="button" id="year-play" class="btn-ghost" title="Play years">▶</button>
+            </div>
+          </div>
+
+          <div class="legend-block">
+            <h3>AQI categories</h3>
+            <p class="legend-note">Discrete bands — not a continuous scale</p>
+            <ul id="legend-bins" class="legend-bins"></ul>
+          </div>
+
+          <div class="stat-block" id="year-stats">
+            <h3>Year snapshot</h3>
+            <dl class="stat-list">
+              <div><dt>Peak month AQI</dt><dd id="stat-peak">—</dd></div>
+              <div><dt>Mean (months w/ data)</dt><dd id="stat-mean">—</dd></div>
+              <div><dt>Months recorded</dt><dd id="stat-months">—</dd></div>
+            </dl>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ═══ DETAIL: month drill-down + predict ═══ -->
+    <section id="view-detail" class="view">
+      <nav class="detail-nav">
+        <button type="button" id="btn-back" class="btn-back">← Back to calendar</button>
+        <span class="detail-badge" id="detail-badge">Delhi · 2020</span>
+      </nav>
+
+      <header class="detail-hero">
+        <h1 id="detail-title">November 2020</h1>
+        <p id="detail-sub" class="detail-sub">Daily mean AQI and key pollutants driving the haze</p>
+      </header>
+
+      <div class="detail-charts">
+        <article class="chart-card chart-primary">
+          <header class="chart-head">
+            <h2>AQI trend <span class="chart-unit">(daily mean)</span></h2>
+            <p class="chart-desc" id="chart-aqi-desc">Air Quality Index across the month</p>
+          </header>
+          <div class="chart-body" id="chart-aqi"></div>
+        </article>
+
+        <article class="chart-card">
+          <header class="chart-head">
+            <h2>Pollutants driving AQI</h2>
+            <p class="chart-desc">PM2.5, NO₂, O₃, SO₂ — normalized view</p>
+          </header>
+          <div class="chart-body chart-tall" id="chart-pollutants"></div>
+        </article>
+
+        <article class="chart-card chart-narrow">
+          <header class="chart-head">
+            <h2>Hourly intensity</h2>
+            <p class="chart-desc">When pollution spikes within the day</p>
+          </header>
+          <div class="chart-body" id="chart-hourly"></div>
+        </article>
+      </div>
+
+      <section class="predict-section" id="predict-section">
+        <div class="predict-header">
+          <h2>Predict <span id="predict-month-label">this month</span> in 2023</h2>
+          <p>
+            Draw the daily AQI trend you expect for the same month in 2023.
+            When you're done, press <strong>Finish</strong> to reveal what the sensors actually recorded.
+          </p>
+        </div>
+
+        <div class="predict-card">
+          <div class="predict-toolbar">
+            <button type="button" id="btn-clear-draw" class="btn-ghost">Clear drawing</button>
+            <span class="draw-hint">Click and drag on the chart below</span>
+          </div>
+          <div class="predict-canvas-wrap" id="predict-wrap">
+            <svg id="predict-grid" class="predict-svg"></svg>
+            <canvas id="predict-canvas"></canvas>
+          </div>
+          <div class="predict-actions">
+            <button type="button" id="btn-finish" class="btn-primary">Finish & reveal 2023</button>
+          </div>
+          <div id="reveal-panel" class="reveal-panel hidden">
+            <h3 id="reveal-title">Actual 2023</h3>
+            <p id="reveal-note" class="reveal-note"></p>
+            <div class="chart-body" id="chart-reveal"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/bins.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
