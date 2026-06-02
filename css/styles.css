@@ -16,7 +16,9 @@
   --accent-glow: rgba(180, 188, 198, 0.35);
   --smoke: rgba(180, 188, 198, 0.5);
   --smoke-bright: rgba(232, 235, 240, 0.95);
-  --cloud-deep: #c46840;
+  --cloud-deep: #9aa3ad;
+  --cloud-mid: #b8bec6;
+  --cloud-light: #dce1e8;
   --font: "DM Sans", system-ui, sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
   --tunnel-vignette: 0.45;
@@ -40,6 +42,16 @@ body.tunnel-locked {
   height: 100vh;
 }
 
+body.tunnel-locked #app {
+  display: block !important;
+  opacity: var(--tunnel-reveal, 0);
+  pointer-events: none;
+}
+
+body.tunnel-locked #app.hidden {
+  visibility: visible;
+}
+
 .hidden { display: none !important; }
 
 /* ─── Cloud tunnel intro ─── */
@@ -47,9 +59,15 @@ body.tunnel-locked {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: var(--cloud-deep);
+  background: linear-gradient(
+    165deg,
+    var(--cloud-light) 0%,
+    var(--cloud-mid) 45%,
+    var(--cloud-deep) 100%
+  );
   overflow: hidden;
-  transition: opacity 0.85s ease, visibility 0.85s ease;
+  transition: opacity 1s ease, visibility 1s ease;
+  --tunnel-fog: 0.92;
 }
 
 .cloud-intro.is-emerging {
@@ -64,8 +82,8 @@ body.tunnel-locked {
 .cloud-viewport {
   position: absolute;
   inset: 0;
-  perspective: 900px;
-  perspective-origin: 50% 45%;
+  perspective: 700px;
+  perspective-origin: 50% 42%;
   transform-style: preserve-3d;
   will-change: transform;
 }
@@ -117,11 +135,13 @@ body.tunnel-locked {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 80% 70% at 50% 50%,
-    transparent 0%,
-    rgba(14, 17, 22, calc(var(--tunnel-vignette, 0.55))) 100%
-  );
+  background:
+    radial-gradient(
+      ellipse 85% 75% at 50% 48%,
+      transparent 0%,
+      rgba(70, 75, 82, calc(var(--tunnel-vignette, 0.65))) 100%
+    ),
+    linear-gradient(180deg, rgba(220, 225, 232, var(--tunnel-fog, 0.9)) 0%, transparent 55%);
 }
 
 .cloud-hint {

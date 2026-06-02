@@ -1,5 +1,5 @@
 /**
- * Grey cloud tunnel — scroll through haze, or enter when data is ready.
+ * Grey cloud tunnel — scroll or swipe through haze to reach the dashboard.
  */
 (function () {
   const INTRO = document.getElementById("cloud-intro");
@@ -16,23 +16,45 @@
   let dataReady = false;
   const emergeCallbacks = [];
 
+  function updateHint() {
+    if (!hint || emerged) return;
+    if (progress >= 0.98 && !dataReady) {
+      hint.textContent = "Almost through the clouds — finishing data load…";
+    } else if (progress >= 0.98 && dataReady) {
+      hint.textContent = "Clearing…";
+    } else if (!dataReady) {
+      hint.textContent = "Scroll or swipe to move through the grey haze";
+    } else {
+      hint.textContent = "Keep scrolling to emerge into the dashboard";
+    }
+  }
+
   function setProgress(p) {
     progress = Math.max(0, Math.min(1, p));
-    const eased = 1 - Math.pow(1 - progress, 1.4);
+    const eased = 1 - Math.pow(1 - progress, 1.55);
 
     layers.forEach((layer) => {
       const depth = parseFloat(layer.dataset.depth || "1");
-      const z = -120 + depth * 55 - eased * (180 + depth * 90);
-      const scale = 1.1 + depth * 0.22 + eased * (2.4 + depth * 0.35);
-      const opacity = Math.min(1, 0.35 + depth * 0.12) * (1 - eased * 0.92);
-      layer.style.transform = `translate3d(0, ${eased * 8}%, ${z}px) scale(${scale})`;
+      const z = -80 + depth * 40 - eased * (320 + depth * 120);
+      const scale = 1 + depth * 0.15 + eased * (3.8 + depth * 0.55);
+      const drift = (depth - 3.5) * eased * 6;
+      const opacity = Math.min(1, 0.4 + depth * 0.1) * (1 - eased * 0.97);
+      layer.style.transform = `translate3d(${drift}%, ${eased * 14}%, ${z}px) scale(${scale})`;
       layer.style.opacity = String(opacity);
     });
 
-    viewport.style.transform = `scale(${1 + eased * 0.08})`;
-    INTRO.style.setProperty("--tunnel-vignette", String(0.55 - eased * 0.5));
+    viewport.style.transform = `scale(${1 + eased * 0.15})`;
+    INTRO.style.setProperty("--tunnel-vignette", String(0.65 - eased * 0.62));
+    INTRO.style.setProperty("--tunnel-fog", String(0.92 - eased * 0.92));
+    document.body.style.setProperty("--tunnel-reveal", String(Math.max(0, (eased - 0.55) / 0.45)));
 
     if (fill) fill.style.width = `${progress * 100}%`;
+
+    if (enterBtn) {
+      enterBtn.classList.toggle("hidden", !(dataReady && progress >= 0.98));
+    }
+
+    updateHint();
 
     if (progress >= 1 && dataReady && !emerged) emerge();
   }
@@ -42,21 +64,20 @@
     emerged = true;
     INTRO.classList.add("is-emerging");
     document.body.classList.remove("tunnel-locked");
+    document.body.style.setProperty("--tunnel-reveal", "1");
     if (enterBtn) enterBtn.classList.add("hidden");
 
     window.setTimeout(() => {
       INTRO.classList.add("hidden");
       emergeCallbacks.forEach((fn) => fn());
       emergeCallbacks.length = 0;
-    }, 900);
+    }, 1000);
   }
 
   function onWheel(e) {
     if (emerged) return;
     e.preventDefault();
-    setProgress(progress + e.deltaY * 0.0012);
-    if (hint && !dataReady) hint.textContent = "Scroll through the haze — loading data…";
-    else if (hint) hint.textContent = "Scroll or swipe to move through the haze";
+    setProgress(progress + e.deltaY * 0.0028);
   }
 
   let touchY = null;
@@ -69,26 +90,36 @@
     e.preventDefault();
     const dy = touchY - e.touches[0].clientY;
     touchY = e.touches[0].clientY;
-    setProgress(progress + dy * 0.0025);
+    setProgress(progress + dy * 0.0035);
   }
 
-  INTRO.addEventListener("wheel", onWheel, { passive: false });
-  INTRO.addEventListener("touchstart", onTouchStart, { passive: true });
-  INTRO.addEventListener("touchmove", onTouchMove, { passive: false });
+  function onKeyDown(e) {
+    if (emerged) return;
+    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
+      e.preventDefault();
+      setProgress(progress + 0.06);
+    } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+      e.preventDefault();
+      setProgress(progress - 0.06);
+    }
+  }
+
+  window.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: false });
+  window.addEventListener("keydown", onKeyDown);
 
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {
-      if (dataReady) emerge();
+      if (dataReady && progress >= 0.98) emerge();
     });
   }
 
   window.CloudTunnel = {
     signalDataReady() {
       dataReady = true;
-      if (enterBtn) enterBtn.classList.remove("hidden");
-      if (hint) hint.textContent = "Data ready — entering dashboard…";
-      // Auto-enter so users are not stuck if they scrolled before data finished
-      window.setTimeout(() => emerge(), 500);
+      updateHint();
+      if (progress >= 1 && !emerged) emerge();
     },
     signalDataError(message) {
       dataReady = false;

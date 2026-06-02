@@ -65,14 +65,16 @@
       }
       if (fill) fill.style.width = "100%";
       if (loader) loader.classList.add("hidden");
-      setLoadStatus("Data loaded.", false);
+      setLoadStatus("Data ready — scroll through the clouds to enter.", false);
 
       const startApp = () => {
         $("#app").classList.remove("hidden");
+        document.body.style.removeProperty("--tunnel-reveal");
         init();
       };
 
       if (window.CloudTunnel) {
+        $("#app").classList.remove("hidden");
         window.CloudTunnel.signalDataReady();
         window.CloudTunnel.onEmerge(startApp);
       } else {
