@@ -145,7 +145,8 @@
   position: relative;
   display: flex;
   justify-content: center;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
+  overflow: visible;
 }
 
 #aqi-dashboard #radial-chart {
@@ -182,7 +183,7 @@
 
 #aqi-dashboard .month-label {
   fill: var(--muted-on-dark);
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--font);
   pointer-events: none;
 }
@@ -388,8 +389,8 @@
 #aqi-dashboard .chart-body {
   width: 100%;
   min-height: 220px;
-  overflow: visible;
-  padding-bottom: 0.5rem;
+  overflow: hidden;
+  position: relative;
 }
 
 #aqi-dashboard .chart-tall { min-height: 280px; }
@@ -397,15 +398,13 @@
 /* D3 chart styles */
 #aqi-dashboard .chart-body svg {
   display: block;
-  width: 100%;
   max-width: 100%;
   height: auto;
-  overflow: visible;
 }
 
 #aqi-dashboard .axis text {
-  fill: var(--muted-on-dark);
-  font-size: 10px;
+  fill: #a8adb4;
+  font-size: 11px;
   font-family: var(--font);
 }
 

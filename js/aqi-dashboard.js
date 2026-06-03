@@ -184,7 +184,7 @@
     const innerR = 72;
     const outerR = 220;
 
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
+    svg.attr("width", width).attr("height", height).style("max-width", "100%").style("display", "block");
 
     const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
 
@@ -231,7 +231,7 @@
     });
 
     // Month labels
-    const labelR = outerR + 22;
+    const labelR = outerR + 28;
     g.selectAll(".month-label")
       .data(pie(d3.range(12)))
       .join("text")
@@ -247,6 +247,8 @@
       })
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
+      .attr("fill", "#a8adb4")
+      .attr("font-size", 12)
       .text((d) => MONTHS[d.data]);
 
     updateYearStats();
@@ -331,14 +333,7 @@
   }
 
   function chartMargins() {
-    return { top: 32, right: 20, bottom: 48, left: 56 };
-  }
-
-  let chartUid = 0;
-
-  function nextGradId(prefix) {
-    chartUid += 1;
-    return `${prefix}-${chartUid}`;
+    return { top: 28, right: 18, bottom: 52, left: 58 };
   }
 
   function mountSvg(container, W, H) {
@@ -347,9 +342,28 @@
       .append("svg")
       .attr("width", W)
       .attr("height", H)
-      .attr("viewBox", `0 0 ${W} ${H}`)
-      .attr("preserveAspectRatio", "xMidYMid meet")
-      .style("overflow", "visible");
+      .attr("role", "img")
+      .style("display", "block")
+      .style("max-width", "100%");
+  }
+
+  function styleAxis(axisG) {
+    axisG.selectAll("text").attr("fill", "#a8adb4").attr("font-size", 11);
+    axisG.selectAll("line, path").attr("stroke", "rgba(140, 148, 158, 0.25)");
+  }
+
+  function dayTicks(maxDay) {
+    const step = maxDay <= 10 ? 1 : maxDay <= 20 ? 2 : 5;
+    const ticks = [];
+    for (let d = 1; d <= maxDay; d += step) ticks.push(d);
+    if (ticks[ticks.length - 1] !== maxDay) ticks.push(maxDay);
+    return ticks;
+  }
+
+  let chartUid = 0;
+  function nextGradId(prefix) {
+    chartUid += 1;
+    return `${prefix}-${chartUid}`;
   }
 
   function renderDetailCharts(year, month) {
@@ -393,17 +407,22 @@
       .nice()
       .range([h, 0]);
 
+    const maxDay = d3.max(daily, (d) => d.day);
+
     g.append("g")
       .attr("class", "grid")
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
       .call((sel) => sel.select(".domain").remove());
 
-    g.append("g")
-      .attr("class", "axis axis-x")
-      .attr("transform", `translate(0,${h})`)
-      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", `translate(0,${h})`)
+        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
+    );
 
-    g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5));
+    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5)));
 
     const line = d3
       .line()
@@ -454,17 +473,22 @@
     const allVals = daily.flatMap((d) => series.map((s) => d[s.key]));
     const y = d3.scaleLinear().domain([0, d3.max(allVals) * 1.1]).nice().range([h, 0]);
 
+    const maxDay = d3.max(daily, (d) => d.day);
+
     g.append("g")
       .attr("class", "grid")
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
       .call((g) => g.select(".domain").remove());
 
-    g.append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(0,${h})`)
-      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", `translate(0,${h})`)
+        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
+    );
 
-    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(5));
+    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5)));
 
     const line = d3
       .line()
@@ -520,20 +544,30 @@
       .nice()
       .range([h, 0]);
 
-    g.append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(0,${h})`)
-      .call(
-        d3
-          .axisBottom(x)
-          .ticks(6)
-          .tickFormat((i) => {
-            const t = hourly[Math.round(i)]?.t ?? "";
-            return t.slice(8, 10) || "";
-          })
-      );
+    const hourTicks = [];
+    for (let i = 0; i < hourly.length; i++) {
+      const hr = parseInt(hourly[i]?.t?.slice(11, 13) || "", 10);
+      if ([0, 6, 12, 18].includes(hr)) hourTicks.push(i);
+    }
+    if (!hourTicks.length) hourTicks.push(0, Math.floor(hourly.length / 2), hourly.length - 1);
 
-    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(4));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", `translate(0,${h})`)
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(hourTicks)
+            .tickFormat((i) => {
+              const hr = parseInt(hourly[Math.round(i)]?.t?.slice(11, 13) || "", 10);
+              return Number.isFinite(hr) ? `${hr}h` : "";
+            })
+        )
+    );
+
+    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(4)));
 
     const line = d3
       .line()
@@ -662,17 +696,22 @@
     const svg = mountSvg("#chart-reveal", W, H);
     const g = svg.append("g").attr("transform", `translate(${mg.left},${mg.top})`);
 
+    const maxDay = d3.max(series, (d) => d.day);
+
     g.append("g")
       .attr("class", "grid")
       .call(d3.axisLeft(y2).tickSize(-iw).tickFormat("").ticks(5))
       .call((sel) => sel.select(".domain").remove());
 
-    g.append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(0,${ih})`)
-      .call(d3.axisBottom(x2).ticks(8).tickFormat((d) => `Day ${d}`));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", `translate(0,${ih})`)
+        .call(d3.axisBottom(x2).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
+    );
 
-    g.append("g").attr("class", "axis").call(d3.axisLeft(y2).ticks(5));
+    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y2).ticks(5)));
 
     const line = d3
       .line()
@@ -696,7 +735,7 @@
     const H = wrap.clientHeight;
     canvas.width = W;
     canvas.height = H;
-    const margin = { top: 28, right: 24, bottom: 40, left: 48 };
+    const margin = { top: 28, right: 18, bottom: 48, left: 58 };
     const w = W - margin.left - margin.right;
     const h = H - margin.top - margin.bottom;
 
@@ -729,15 +768,21 @@
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
       .call((sel) => sel.select(".domain").remove());
 
-    g.append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(0,${margin.top + h})`)
-      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", `translate(0,${margin.top + h})`)
+        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
+    );
 
-    g.append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(y).ticks(5));
+    styleAxis(
+      g
+        .append("g")
+        .attr("class", "axis axis-y")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(5))
+    );
 
     const line = d3
       .line()

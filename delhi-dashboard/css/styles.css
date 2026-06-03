@@ -329,7 +329,8 @@ body.tunnel-locked #app.hidden {
   position: relative;
   display: flex;
   justify-content: center;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
+  overflow: visible;
 }
 
 #radial-chart {
@@ -366,7 +367,7 @@ body.tunnel-locked #app.hidden {
 
 .month-label {
   fill: var(--muted-on-dark);
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--font);
   pointer-events: none;
 }
@@ -569,8 +570,8 @@ body.tunnel-locked #app.hidden {
 .chart-body {
   width: 100%;
   min-height: 220px;
-  overflow: visible;
-  padding-bottom: 0.5rem;
+  overflow: hidden;
+  position: relative;
 }
 
 .chart-tall { min-height: 280px; }
@@ -578,13 +579,15 @@ body.tunnel-locked #app.hidden {
 /* D3 chart styles */
 .chart-body svg {
   display: block;
-  width: 100%;
   max-width: 100%;
   height: auto;
-  overflow: visible;
 }
 
-.axis text { fill: var(--muted-on-dark); font-size: 10px; font-family: var(--font); }
+.axis text {
+  fill: #a8adb4;
+  font-size: 11px;
+  font-family: var(--font);
+}
 .axis line, .axis path { stroke: rgba(140, 148, 158, 0.25); }
 
 .grid line { stroke: rgba(140, 148, 158, 0.1); stroke-width: 1; }
