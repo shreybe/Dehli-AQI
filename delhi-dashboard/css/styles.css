@@ -585,7 +585,7 @@ body.tunnel-locked #app.hidden {
 .chart-body {
   width: 100%;
   min-height: 220px;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 
@@ -594,8 +594,9 @@ body.tunnel-locked #app.hidden {
 /* D3 chart styles */
 .chart-body svg {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .axis text {

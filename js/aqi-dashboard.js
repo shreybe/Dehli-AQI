@@ -25,16 +25,13 @@
   const viewDetail = $("#view-detail");
 
   function chartContainerWidth(node) {
-    if (!node) return 640;
-    const direct = node.clientWidth;
-    if (direct > 20) return direct;
+    if (!node) return 800;
+    const measured = node.getBoundingClientRect?.().width || node.clientWidth || 0;
+    if (measured > 20) return Math.round(measured);
     const card = node.closest?.(".chart-card") || node.closest?.(".predict-card");
-    const fromCard = card?.clientWidth ? card.clientWidth - 40 : 0;
-    if (fromCard > 20) return fromCard;
-    const host = document.getElementById("aqi-dashboard");
-    const fromHost = host?.clientWidth ? host.clientWidth - 64 : 0;
-    if (fromHost > 20) return fromHost;
-    return Math.min(window.innerWidth - 48, 720);
+    const cardW = card?.getBoundingClientRect?.().width || card?.clientWidth || 0;
+    if (cardW > 20) return Math.round(cardW - 40);
+    return 800;
   }
 
   function afterLayout(fn) {
@@ -337,31 +334,20 @@
   }
 
   function chartMargins() {
-    return { top: 28, right: 18, bottom: 52, left: 58 };
+    return { top: 28, right: 24, bottom: 36, left: 48 };
   }
 
   function mountSvg(container, W, H) {
     return d3
       .select(container)
       .append("svg")
-      .attr("width", W)
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("width", "100%")
       .attr("height", H)
+      .attr("preserveAspectRatio", "xMidYMid meet")
       .attr("role", "img")
       .style("display", "block")
-      .style("max-width", "100%");
-  }
-
-  function styleAxis(axisG) {
-    axisG.selectAll("text").attr("fill", "#a8adb4").attr("font-size", 11);
-    axisG.selectAll("line, path").attr("stroke", "rgba(140, 148, 158, 0.25)");
-  }
-
-  function dayTicks(maxDay) {
-    const step = maxDay <= 10 ? 1 : maxDay <= 20 ? 2 : 5;
-    const ticks = [];
-    for (let d = 1; d <= maxDay; d += step) ticks.push(d);
-    if (ticks[ticks.length - 1] !== maxDay) ticks.push(maxDay);
-    return ticks;
+      .style("overflow", "visible");
   }
 
   let chartUid = 0;
@@ -411,22 +397,17 @@
       .nice()
       .range([h, 0]);
 
-    const maxDay = d3.max(daily, (d) => d.day);
-
     g.append("g")
       .attr("class", "grid")
-      .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
+      .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(8))
       .call((sel) => sel.select(".domain").remove());
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-x")
-        .attr("transform", `translate(0,${h})`)
-        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5)));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(8));
 
     const line = d3
       .line()
@@ -477,22 +458,17 @@
     const allVals = daily.flatMap((d) => series.map((s) => d[s.key]));
     const y = d3.scaleLinear().domain([0, d3.max(allVals) * 1.1]).nice().range([h, 0]);
 
-    const maxDay = d3.max(daily, (d) => d.day);
-
     g.append("g")
       .attr("class", "grid")
-      .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
+      .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(8))
       .call((g) => g.select(".domain").remove());
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-x")
-        .attr("transform", `translate(0,${h})`)
-        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(5)));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(8));
 
     const line = d3
       .line()
@@ -548,30 +524,25 @@
       .nice()
       .range([h, 0]);
 
-    const hourTicks = [];
-    for (let i = 0; i < hourly.length; i++) {
-      const hr = parseInt(hourly[i]?.t?.slice(11, 13) || "", 10);
-      if ([0, 6, 12, 18].includes(hr)) hourTicks.push(i);
-    }
-    if (!hourTicks.length) hourTicks.push(0, Math.floor(hourly.length / 2), hourly.length - 1);
+    g.append("g")
+      .attr("class", "grid")
+      .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(4))
+      .call((sel) => sel.select(".domain").remove());
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-x")
-        .attr("transform", `translate(0,${h})`)
-        .call(
-          d3
-            .axisBottom(x)
-            .tickValues(hourTicks)
-            .tickFormat((i) => {
-              const hr = parseInt(hourly[Math.round(i)]?.t?.slice(11, 13) || "", 10);
-              return Number.isFinite(hr) ? `${hr}h` : "";
-            })
-        )
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${h})`)
+      .call(
+        d3
+          .axisBottom(x)
+          .ticks(6)
+          .tickFormat((i) => {
+            const t = hourly[Math.round(i)]?.t ?? "";
+            return t.slice(8, 10) || "";
+          })
+      );
 
-    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y).ticks(4)));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(4));
 
     const line = d3
       .line()
@@ -700,22 +671,17 @@
     const svg = mountSvg("#chart-reveal", W, H);
     const g = svg.append("g").attr("transform", `translate(${mg.left},${mg.top})`);
 
-    const maxDay = d3.max(series, (d) => d.day);
-
     g.append("g")
       .attr("class", "grid")
-      .call(d3.axisLeft(y2).tickSize(-iw).tickFormat("").ticks(5))
+      .call(d3.axisLeft(y2).tickSize(-iw).tickFormat("").ticks(8))
       .call((sel) => sel.select(".domain").remove());
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-x")
-        .attr("transform", `translate(0,${ih})`)
-        .call(d3.axisBottom(x2).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${ih})`)
+      .call(d3.axisBottom(x2).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    styleAxis(g.append("g").attr("class", "axis axis-y").call(d3.axisLeft(y2).ticks(5)));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y2).ticks(8));
 
     const line = d3
       .line()
@@ -772,21 +738,15 @@
       .call(d3.axisLeft(y).tickSize(-w).tickFormat("").ticks(5))
       .call((sel) => sel.select(".domain").remove());
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-x")
-        .attr("transform", `translate(0,${margin.top + h})`)
-        .call(d3.axisBottom(x).tickValues(dayTicks(maxDay)).tickFormat((d) => String(d)))
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${margin.top + h})`)
+      .call(d3.axisBottom(x).ticks(8).tickFormat((d) => `Day ${d}`));
 
-    styleAxis(
-      g
-        .append("g")
-        .attr("class", "axis axis-y")
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y).ticks(5))
-    );
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).ticks(8));
 
     const line = d3
       .line()
