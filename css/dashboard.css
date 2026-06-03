@@ -27,11 +27,14 @@
   color: var(--text);
   line-height: 1.5;
   min-height: auto;
-  overflow-x: clip;
+  overflow: visible;
 }
 
 #aqi-dashboard #app {
-  overflow-x: clip;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  overflow: visible;
 }
 
 #aqi-dashboard *, #aqi-dashboard *::before, #aqi-dashboard *::after {
@@ -114,9 +117,13 @@
 
 #aqi-dashboard .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 1.5rem;
   align-items: start;
+}
+
+#aqi-dashboard .panel-radial {
+  min-width: 0;
 }
 
 #aqi-dashboard .panel {
@@ -142,25 +149,30 @@
 }
 
 #aqi-dashboard .radial-wrap {
-  position: relative;
   display: flex;
   justify-content: center;
-  padding: 1.5rem 0;
-  overflow: visible;
+  padding: 1rem 0 0.5rem;
 }
 
-#aqi-dashboard #radial-chart {
+#aqi-dashboard .radial-chart-box {
+  position: relative;
+  width: min(520px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+#aqi-dashboard .radial-chart-box svg {
   width: 100%;
-  max-width: 520px;
-  height: auto;
+  height: 100%;
+  display: block;
   overflow: visible;
 }
 
 #aqi-dashboard .radial-center-label {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: grid;
+  place-items: center;
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--accent);

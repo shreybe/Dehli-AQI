@@ -184,7 +184,11 @@
     const innerR = 72;
     const outerR = 220;
 
-    svg.attr("width", width).attr("height", height).style("max-width", "100%").style("display", "block");
+    svg
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .style("display", "block");
 
     const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
 

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/dashboard.css?v=embed-v5" />
+    <link rel="stylesheet" href="css/dashboard.css?v=embed-v6" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
   </head>
@@ -516,8 +516,10 @@
             <p class="panel-hint">Click a colored month to explore · Oct–Nov = stubble season</p>
           </div>
           <div class="radial-wrap">
-            <svg id="radial-chart" role="img" aria-label="Monthly AQI radial chart"></svg>
-            <div class="radial-center-label" id="radial-center">2020</div>
+            <div class="radial-chart-box">
+              <svg id="radial-chart" role="img" aria-label="Monthly AQI radial chart"></svg>
+              <div class="radial-center-label" id="radial-center">2020</div>
+            </div>
           </div>
         </div>
 
@@ -1073,8 +1075,8 @@
         });
       })();
     </script>
-    <script src="js/bins.js?v=embed-v5"></script>
-    <script src="js/aqi-dashboard.js?v=embed-v5"></script>
+    <script src="js/bins.js?v=embed-v6"></script>
+    <script src="js/aqi-dashboard.js?v=embed-v6"></script>
     <script src="app.js"></script>
   </body>
 </html>

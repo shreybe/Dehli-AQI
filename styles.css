@@ -3577,7 +3577,7 @@ body {
   max-width: 1280px;
   margin: 0 auto;
   border-radius: 16px 16px 0 0;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 -8px 48px rgba(42, 32, 24, 0.18);
 }
 
